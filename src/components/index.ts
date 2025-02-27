@@ -1,3 +1,8 @@
+export { RootNoteSelect } from './root_note_select';
+export { DisplayTypeSelect } from './display_type_select';
+export { ScaleTypeSelect } from './scale_type_select';
+export { ArpeggioTypeSelect } from './arpeggio_type_select';
+export { NotationToggle } from './notation_toggle';
 export { Fretboard } from './fretboard';
 export { Marker } from './marker';
 export { FretMarkers } from './fret_markers';

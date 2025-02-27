@@ -28,7 +28,9 @@
       "types/*": ["types/*"],
       "types": ["types"],
       "themes/*": ["themes/*"],
-      "themes": ["themes"]
+      "themes": ["themes"],
+      "store/*": ["store/*"],
+      "store": ["store"]
     }
   },
   "include": [
