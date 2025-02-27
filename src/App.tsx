@@ -11,7 +11,7 @@ import {
 } from '@mui/material';
 
 import { Brightness4, Brightness7 } from '@mui/icons-material';
-import darkTheme, { defaultTheme } from 'themes';
+import { darkTheme, defaultTheme } from 'themes';
 import { useSelector, useDispatch } from 'react-redux';
 import { RootState, setIsDarkMode } from 'store';
 
