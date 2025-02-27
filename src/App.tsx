@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Container, 
   Typography, 
@@ -12,23 +12,35 @@ import {
   Paper,
   ThemeProvider,
   IconButton,
-  useMediaQuery,
   CssBaseline
 } from '@mui/material';
 import { Fretboard } from 'components';
 import { Note, ScaleType, ArpeggioType, DisplayType } from 'types';
 import { Brightness4, Brightness7 } from '@mui/icons-material';
 import darkTheme, { defaultTheme } from 'themes';
+import { useSelector, useDispatch } from 'react-redux';
+import { RootState } from './store/store';
+import {
+  setRootNote,
+  setDisplayType,
+  setScaleType,
+  setArpeggioType,
+  setUseNashville,
+  setIsDarkMode,
+} from './store/guitarSlice';
 
 function App() {
-  const prefersDarkMode = useMediaQuery('(prefers-color-scheme: dark)');
-  const [isDarkMode, setIsDarkMode] = useState(prefersDarkMode);
+  const dispatch = useDispatch();
+  const {
+    rootNote,
+    displayType,
+    scaleType,
+    arpeggioType,
+    useNashville,
+    isDarkMode,
+  } = useSelector((state: RootState) => state.guitar);
+
   const theme = isDarkMode ? darkTheme : defaultTheme;
-  const [rootNote, setRootNote] = useState<Note>('A');
-  const [displayType, setDisplayType] = useState<DisplayType>('scale');
-  const [scaleType, setScaleType] = useState<ScaleType>('major');
-  const [arpeggioType, setArpeggioType] = useState<ArpeggioType>('major');
-  const [useNashville, setUseNashville] = useState(false);
 
   return (
     <ThemeProvider theme={theme}>
@@ -39,7 +51,10 @@ function App() {
             <Typography variant="h3" component="h1">
               Guitar Scale Visualizer
             </Typography>
-            <IconButton onClick={() => setIsDarkMode(!isDarkMode)} color="inherit">
+            <IconButton 
+              onClick={() => dispatch(setIsDarkMode(!isDarkMode))} 
+              color="inherit"
+            >
               {isDarkMode ? <Brightness7 /> : <Brightness4 />}
             </IconButton>
           </Box>
@@ -51,7 +66,7 @@ function App() {
                 <Select
                   value={rootNote}
                   label="Root Note"
-                  onChange={(e) => setRootNote(e.target.value as Note)}
+                  onChange={(e) => dispatch(setRootNote(e.target.value as Note))}
                 >
                   {['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'].map(note => (
                     <MenuItem key={note} value={note}>{note}</MenuItem>
@@ -64,7 +79,7 @@ function App() {
                 <Select
                   value={displayType}
                   label="Display Type"
-                  onChange={(e) => setDisplayType(e.target.value as DisplayType)}
+                  onChange={(e) => dispatch(setDisplayType(e.target.value as DisplayType))}
                 >
                   <MenuItem value="scale">Scale</MenuItem>
                   <MenuItem value="arpeggio">Arpeggio</MenuItem>
@@ -79,7 +94,7 @@ function App() {
                   <Select
                     value={scaleType}
                     label="Scale Type"
-                    onChange={(e) => setScaleType(e.target.value as ScaleType)}
+                    onChange={(e) => dispatch(setScaleType(e.target.value as ScaleType))}
                   >
                     {['major', 'minor', 'pentatonic', 'blues'].map(scale => (
                       <MenuItem key={scale} value={scale}>{scale}</MenuItem>
@@ -92,7 +107,7 @@ function App() {
                   <Select
                     value={arpeggioType}
                     label="Arpeggio Type"
-                    onChange={(e) => setArpeggioType(e.target.value as ArpeggioType)}
+                    onChange={(e) => dispatch(setArpeggioType(e.target.value as ArpeggioType))}
                   >
                     {['major', 'minor', 'diminished', 'augmented', 'dominant7'].map(arpeggio => (
                       <MenuItem key={arpeggio} value={arpeggio}>{arpeggio}</MenuItem>
@@ -105,7 +120,7 @@ function App() {
                 control={
                   <Switch
                     checked={useNashville}
-                    onChange={(e) => setUseNashville(e.target.checked)}
+                    onChange={(e) => dispatch(setUseNashville(e.target.checked))}
                   />
                 }
                 label="Use Nashville Numbers"

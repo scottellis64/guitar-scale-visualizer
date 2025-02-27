@@ -17,8 +17,6 @@ interface FretboardProps {
 }
 
 const STANDARD_TUNING: Note[] = ['E', 'B', 'G', 'D', 'A', 'E'];
-const FRET_MARKERS = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
-const DOUBLE_MARKERS = [12, 24];
 
 // Styled components
 const FretboardContainer = styled(Box)(({ theme }) => ({
