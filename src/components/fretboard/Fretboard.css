@@ -1,0 +1,104 @@
+.fretboard-container {
+  position: relative;
+  padding: 20px;
+  background: #f5d6a8;
+  border-radius: 4px;
+}
+
+.fretboard {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.string {
+  display: flex;
+  height: 40px;
+  gap: 1px;
+  position: relative;
+}
+
+.fret {
+  width: 60px;
+  border-right: 2px solid #999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.fret:first-child {
+  border-right: 4px solid #666;
+}
+
+.note {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  font-size: 14px;
+  z-index: 2;
+}
+
+.fret-number {
+  position: absolute;
+  top: -20px;
+  width: 100%;
+  text-align: center;
+  font-size: 12px;
+  color: #666;
+}
+
+.fret-markers {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 20px;
+  z-index: 1;
+}
+
+.marker {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.fret-markers.double {
+  flex-direction: column;
+  gap: 10px;
+}
+
+.fret.in-scale .note {
+  background: #4CAF50;
+  color: white;
+}
+
+.fret.in-scale.arpeggio .note {
+  background: #FF5722;
+}
+
+/* Add styles for the checkbox control */
+.controls label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.controls input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+.controls select {
+  padding: 8px;
+  font-size: 16px;
+  border-radius: 4px;
+  margin-right: 8px;
+} 
