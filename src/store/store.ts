@@ -1,9 +1,9 @@
 import { configureStore } from '@reduxjs/toolkit';
-import { guitarSlice } from './guitarSlice';
+import guitarSliceReducer from './guitar-slice';
 
 export const store = configureStore({
   reducer: {
-    guitar: guitarSlice.reducer,
+    guitar: guitarSliceReducer,
   },
 });
 

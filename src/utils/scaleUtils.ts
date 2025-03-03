@@ -37,3 +37,9 @@ export const getNashvilleNumber = (
   const definition = isArpeggio ? ARPEGGIOS[type as ArpeggioType] : SCALES[type as ScaleType];
   return definition.nashvilleNumbers[noteIndex];
 }; 
+
+export const getNoteAtFret = (stringNote: Note, fret: number): Note => {
+  const startIndex = ALL_NOTES.indexOf(stringNote);
+  const noteIndex = (startIndex + fret) % 12;
+  return ALL_NOTES[noteIndex];
+};

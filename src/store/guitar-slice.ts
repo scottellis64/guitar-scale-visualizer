@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import { Note, ScaleType, ArpeggioType, DisplayType } from 'types';
+import { Note, ScaleType, ArpeggioType, DisplayType, CagedPattern, ERelativePattern } from 'types';
 
 interface GuitarState {
   rootNote: Note;
@@ -8,6 +8,8 @@ interface GuitarState {
   arpeggioType: ArpeggioType;
   useNashville: boolean;
   isDarkMode: boolean;
+  cagedPattern: CagedPattern | null;
+  eRelativePattern: ERelativePattern | null;
 }
 
 const initialState: GuitarState = {
@@ -17,6 +19,8 @@ const initialState: GuitarState = {
   arpeggioType: 'major',
   useNashville: false,
   isDarkMode: false,
+  cagedPattern: null,
+  eRelativePattern: null
 };
 
 export const guitarSlice = createSlice({
@@ -41,6 +45,12 @@ export const guitarSlice = createSlice({
     setIsDarkMode: (state, action: PayloadAction<boolean>) => {
       state.isDarkMode = action.payload;
     },
+    setCagedPattern: (state, action: PayloadAction<CagedPattern | null>) => {
+      state.cagedPattern = action.payload;
+    },
+    setERelativePattern: (state, action: PayloadAction<ERelativePattern | null>) => {
+      state.eRelativePattern = action.payload;
+    }
   },
 });
 
@@ -51,4 +61,8 @@ export const {
   setArpeggioType, 
   setUseNashville,
   setIsDarkMode,
-} = guitarSlice.actions; 
+  setCagedPattern,
+  setERelativePattern
+} = guitarSlice.actions;
+
+export default guitarSlice.reducer;  

@@ -1,7 +1,6 @@
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from 'store/store';
-import { setArpeggioType } from 'store/guitarSlice';
+import { RootState, setArpeggioType } from 'store';
 import { ArpeggioType } from 'types';
 
 const ARPEGGIO_TYPES: ArpeggioType[] = ['major', 'minor', 'diminished', 'augmented', 'dominant7'];

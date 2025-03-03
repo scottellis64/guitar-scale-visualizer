@@ -30,5 +30,7 @@ export const darkTheme = createTheme({
       noteScale: '#81C784',
       noteArpeggio: '#FF8A65',
       noteText: '#ffffff',
+      cagedPattern: '#FF8A65',
+      eRelativePattern: '#FF8A65',
     },
   }); 

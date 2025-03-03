@@ -11,6 +11,8 @@ declare module '@mui/material/styles' {
       noteScale: string;
       noteArpeggio: string;
       noteText: string;
+      cagedPattern: string;
+      eRelativePattern: string;
     }
   }
   interface Theme extends CustomTheme {}
@@ -50,6 +52,8 @@ export const defaultTheme = createTheme({
     noteScale: '#4CAF50',
     noteArpeggio: '#FF5722',
     noteText: '#ffffff',
+    cagedPattern: '#FF5722',
+    eRelativePattern: '#FF5722',
   },
   components: {
     MuiPaper: {
