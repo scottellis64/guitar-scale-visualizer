@@ -76,10 +76,12 @@ export const Fretboard: React.FC<FretboardProps> = ({
   const isInERelativePattern = (stringNum: number, fretNum: number) => {
     if (!eRelativePattern) return false;
 
-    const selectedERelativeShape: ERelativePatternMapped = getSelectedERelativeShape(rootNote, 'major' as ScaleType, eRelativePattern);
+    const selectedERelativeShapes: ERelativePatternMapped[] = getSelectedERelativeShape(rootNote, 'major' as ScaleType, eRelativePattern);
 
-    return selectedERelativeShape.fretPositions.some((pos: PatternPosition) => {
-      return pos.string === stringNum && pos.fret === fretNum;
+    return selectedERelativeShapes.some((selectedERelativeShape: ERelativePatternMapped) => {
+      return selectedERelativeShape.fretPositions.some((pos: PatternPosition) => {
+        return pos.string === stringNum && pos.fret === fretNum;
+      });
     });
   };
 

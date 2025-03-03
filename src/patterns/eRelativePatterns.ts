@@ -131,7 +131,6 @@ export const E_RELATIVE_SHAPES: Record<string, ERelativeShape> = {
   
         { string: 3, fret: 1 }, 
         { string: 3, fret: 2 }, 
-        { string: 3, fret: 4 }, 
   
         { string: 2, fret: 0 }, 
         { string: 2, fret: 2 }, 
@@ -229,9 +228,9 @@ export const getIntervalStepsForPatternShape = (eRoot: number, scaleType: ScaleT
   return sortedIntervalSteps;
 }
 
-export const getSelectedERelativeShape = (rootOfScale: Note, scaleType: ScaleType, eRelativePattern: ERelativePattern): ERelativePatternMapped => {
+export const getSelectedERelativeShape = (rootOfScale: Note, scaleType: ScaleType, eRelativePattern: ERelativePattern): ERelativePatternMapped[] => {
   const patterns: ERelativePatternMapped[] = getERelativeShapesInScale(rootOfScale, scaleType);
-  return patterns.find(pattern => pattern.name === eRelativePattern) as ERelativePatternMapped;
+  return patterns.filter(pattern => pattern.name === eRelativePattern) as ERelativePatternMapped[];
 }
 
 export const getERelativeShapesInScale = (rootOfScale: Note, scaleType: ScaleType): ERelativePatternMapped[] => {
