@@ -1,7 +1,6 @@
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from 'store/store';
-import { setScaleType } from 'store/guitarSlice';
+import { RootState, setScaleType } from 'store';
 import { ScaleType } from 'types';
 
 const SCALE_TYPES: ScaleType[] = ['major', 'minor', 'pentatonic', 'blues'];

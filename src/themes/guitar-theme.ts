@@ -10,5 +10,7 @@ export interface GuitarTheme extends Omit<MuiTheme, 'fretboard'> {
     noteScale: string;
     noteArpeggio: string;
     noteText: string;
+    cagedPattern: string;
+    eRelativePattern: string;
   };
 } 

@@ -1,7 +1,6 @@
 import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from 'store/store';
-import { setDisplayType } from 'store/guitarSlice';
+import { RootState, setDisplayType } from 'store';
 import { DisplayType } from 'types';
 
 export const DisplayTypeSelect = () => {

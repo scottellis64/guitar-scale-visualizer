@@ -10,3 +10,5 @@ export { Fret } from './fret';
 export { String } from './string';
 export { defaultTheme } from 'themes';
 export type { GuitarTheme } from 'themes';
+export { CagedPatternSelect } from './caged_pattern_select';
+export { ERelativePatternSelect } from './e_relative_pattern_select';

@@ -21,6 +21,7 @@ import {
   ScaleTypeSelect,
   ArpeggioTypeSelect,
   NotationToggle,
+  ERelativePatternSelect,
   Fretboard
 } from 'components';
 
@@ -33,6 +34,8 @@ function App() {
     arpeggioType,
     useNashville,
     isDarkMode,
+    cagedPattern,
+    eRelativePattern
   } = useSelector((state: RootState) => state.guitar);
 
   const theme = isDarkMode ? darkTheme : defaultTheme;
@@ -64,6 +67,7 @@ function App() {
                 <ArpeggioTypeSelect />
               )}
               <NotationToggle />
+              <ERelativePatternSelect />
             </Box>
           </Paper>
 
@@ -74,6 +78,8 @@ function App() {
               frets={15} 
               useNashville={useNashville}
               isArpeggio={displayType === 'arpeggio'}
+              cagedPattern={cagedPattern}
+              eRelativePattern={eRelativePattern}
               showTriads={displayType === 'triad'}  
             />
           </Paper>

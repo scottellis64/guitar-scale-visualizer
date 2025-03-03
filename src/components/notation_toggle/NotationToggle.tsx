@@ -1,7 +1,6 @@
 import { FormControlLabel, Switch } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { RootState } from 'store/store';
-import { setUseNashville } from 'store/guitarSlice';
+import { RootState, setUseNashville } from 'store';
 
 export const NotationToggle = () => {
   const dispatch = useDispatch();

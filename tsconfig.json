@@ -25,12 +25,16 @@
       "*": ["*", "*.ts", "*.tsx"],
       "components/*": ["components/*"],
       "components": ["components"],
+      "patterns/*": ["patterns/*"],
+      "patterns": ["patterns"],
       "types/*": ["types/*"],
       "types": ["types"],
       "themes/*": ["themes/*"],
       "themes": ["themes"],
       "store/*": ["store/*"],
-      "store": ["store"]
+      "store": ["store"],
+      "utils/*": ["utils/*"],
+      "utils": ["utils"]
     }
   },
   "include": [
