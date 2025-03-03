@@ -1,5 +1,5 @@
 import { Box, styled } from '@mui/material';
-import { Marker } from '../marker';
+import { Marker } from 'components';
 
 const FretMarkersContainer = styled(Box, {
     shouldForwardProp: prop => prop !== 'isDouble'

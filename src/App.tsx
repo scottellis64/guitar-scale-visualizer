@@ -75,7 +75,7 @@ function App() {
             <Fretboard 
               rootNote={rootNote} 
               type={displayType === 'scale' ? scaleType : arpeggioType}
-              frets={15} 
+              frets={16} 
               useNashville={useNashville}
               isArpeggio={displayType === 'arpeggio'}
               cagedPattern={cagedPattern}
