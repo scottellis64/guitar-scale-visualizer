@@ -42,7 +42,7 @@ export const CAGED_SHAPES: Record<string, PatternShape> = {
   }
 };
 
-export const getCagedPattern = (rootNote: Note, pattern: string, startFret: number = 0): PatternPosition[] => {
+export const getCagedPattern = (_rootNote: Note, pattern: string, startFret: number = 0): PatternPosition[] => {
   const shape = CAGED_SHAPES[pattern];
   if (!shape) return [];
 

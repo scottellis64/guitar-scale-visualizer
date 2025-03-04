@@ -1,43 +1,37 @@
 {
   "compilerOptions": {
-    "target": "ES2022",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable",
-      "esnext"
-    ],
-    "allowJs": true,
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "module": "ESNext",
     "skipLibCheck": true,
-    "esModuleInterop": true,
-    "allowSyntheticDefaultImports": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "noFallthroughCasesInSwitch": true,
-    "module": "esnext",
     "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
     "jsx": "react-jsx",
-    "baseUrl": "src",
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
     "paths": {
-      "*": ["*", "*.ts", "*.tsx"],
-      "components/*": ["components/*"],
-      "components": ["components"],
-      "patterns/*": ["patterns/*"],
-      "patterns": ["patterns"],
-      "types/*": ["types/*"],
-      "types": ["types"],
-      "themes/*": ["themes/*"],
-      "themes": ["themes"],
-      "store/*": ["store/*"],
-      "store": ["store"],
-      "utils/*": ["utils/*"],
-      "utils": ["utils"]
+      "src/*": ["./src/*"],
+      "components":["./src/components"],
+      "components/*":["./src/components/*"],
+      "store":["./src/store"],
+      "store/*":["./src/store/*"],
+      "patterns":["./src/patterns"],
+      "patterns/*":["./src/patterns/*"],
+      "types":["./src/types"],
+      "types/*":["./src/types/*"],
+      "themes":["./src/themes"],
+      "themes/*":["./src/themes/*"],
+      "utils":["./src/utils"],
+      "utils/*":["./src/utils/*"]
     }
   },
-  "include": [
-    "src"
-  ]
+  "include": ["src"],
+  "references": [{ "path": "./tsconfig.node.json" }]
 } 
