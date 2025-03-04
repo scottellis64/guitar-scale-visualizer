@@ -1,17 +1,17 @@
 import { FormControlLabel, Switch } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, setUseNashville } from 'store';
 
-export const NotationToggle = () => {
-  const dispatch = useDispatch();
-  const useNashville = useSelector((state: RootState) => state.guitar.useNashville);
+interface NotationToggleProps {
+  value: boolean;
+  onChange: (useNashville: boolean) => void;
+}
 
+export const NotationToggle: React.FC<NotationToggleProps> = ({ value, onChange }) => {
   return (
     <FormControlLabel
       control={
         <Switch
-          checked={useNashville}
-          onChange={(e) => dispatch(setUseNashville(e.target.checked))}
+          checked={value}
+          onChange={(e) => onChange(e.target.checked)}
         />
       }
       label="Use Nashville Numbers"

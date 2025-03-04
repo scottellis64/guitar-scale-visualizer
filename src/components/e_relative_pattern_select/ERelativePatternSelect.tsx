@@ -1,22 +1,24 @@
 import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, setERelativePattern } from 'store';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { ERelativePattern } from 'types';
 
-export const ERelativePatternSelect: React.FC = () => {
-  const dispatch = useDispatch();
-  const currentPattern = useSelector((state: RootState) => state.guitar.eRelativePattern);
+interface ERelativePatternSelectProps {
+  value: ERelativePattern;
+  onChange: (pattern: ERelativePattern) => void;
+}
 
+export const ERelativePatternSelect: React.FC<ERelativePatternSelectProps> = ({ value, onChange }) => {
   return (
-    <FormControl sx={{ minWidth: 120 }}>
-      <InputLabel>E Relative Pattern</InputLabel>
+    <FormControl size="small" sx={{ minWidth: 120 }}>
+      <InputLabel>E-Relative Pattern</InputLabel>
       <Select
-        value={currentPattern || ''}
-        label="E Relative Pattern"
-        onChange={(e) => dispatch(setERelativePattern(e.target.value as ERelativePattern))}
+        value={value || 'None'}
+        label="E-Relative Pattern"
+        onChange={(e: SelectChangeEvent<ERelativePattern>) => 
+          onChange(e.target.value === 'None' ? null : e.target.value as ERelativePattern)
+        }
       >
-        <MenuItem value="">None</MenuItem>
+        <MenuItem value="None">None</MenuItem>
         <MenuItem value="1E">1E Shape</MenuItem>
         <MenuItem value="2D">2D Shape</MenuItem>
         <MenuItem value="3C">3C Shape</MenuItem>

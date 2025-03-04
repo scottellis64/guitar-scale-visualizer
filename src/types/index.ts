@@ -80,7 +80,7 @@ export const ARPEGGIOS: Record<ArpeggioType, ArpeggioDefinition> = {
 
 export const ALL_NOTES: Note[] = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']; 
 
-export type CagedPattern = 'C' | 'A' | 'G' | 'E' | 'D' | null;
+export type CagedPattern = 'C' | 'A' | 'G' | 'E' | 'D' | 'None' | null;
 
 export interface GuitarState {
   rootNote: Note;
@@ -102,7 +102,7 @@ export interface PatternShape {
   pattern: PatternPosition[];
 }
 
-export type ERelativePattern = '1E' | '7F' | '6G' | '5A' | '4B' | '3C' | '2D' | null;
+export type ERelativePattern = '1E' | '7F' | '6G' | '5A' | '4B' | '3C' | '2D' | 'None' | null;
 
 export interface ERelativeShape {
   root: number;

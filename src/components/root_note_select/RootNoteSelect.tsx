@@ -1,21 +1,21 @@
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, setRootNote } from 'store';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { Note } from 'types';
 
 const NOTES: Note[] = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
 
-export const RootNoteSelect = () => {
-  const dispatch = useDispatch();
-  const rootNote = useSelector((state: RootState) => state.guitar.rootNote);
+interface RootNoteSelectProps {
+  value: Note;
+  onChange: (note: Note) => void;
+}
 
+export const RootNoteSelect: React.FC<RootNoteSelectProps> = ({ value, onChange }) => {
   return (
     <FormControl size="small" sx={{ minWidth: 120 }}>
       <InputLabel>Root Note</InputLabel>
       <Select
-        value={rootNote}
+        value={value}
         label="Root Note"
-        onChange={(e) => dispatch(setRootNote(e.target.value as Note))}
+        onChange={(e: SelectChangeEvent<Note>) => onChange(e.target.value as Note)}
       >
         {NOTES.map(note => (
           <MenuItem key={note} value={note}>{note}</MenuItem>

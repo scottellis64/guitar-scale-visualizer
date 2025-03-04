@@ -1,27 +1,29 @@
 import React from 'react';
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, setCagedPattern } from 'store';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { CagedPattern } from 'types';
 
-export const CagedPatternSelect: React.FC = () => {
-  const dispatch = useDispatch();
-  const currentPattern = useSelector((state: RootState) => state.guitar.cagedPattern);
+interface CagedPatternSelectProps {
+  value: CagedPattern;
+  onChange: (pattern: CagedPattern) => void;
+}
 
+export const CagedPatternSelect: React.FC<CagedPatternSelectProps> = ({ value, onChange }) => {
   return (
-    <FormControl sx={{ minWidth: 120 }}>
+    <FormControl size="small" sx={{ minWidth: 120 }}>
       <InputLabel>CAGED Pattern</InputLabel>
       <Select
-        value={currentPattern || ''}
+        value={value || 'none'}
         label="CAGED Pattern"
-        onChange={(e) => dispatch(setCagedPattern(e.target.value as CagedPattern))}
+        onChange={(e: SelectChangeEvent<CagedPattern | 'none'>) => 
+          onChange(e.target.value === 'none' ? null : e.target.value as CagedPattern)
+        }
       >
-        <MenuItem value="">None</MenuItem>
-        <MenuItem value="C">C Shape</MenuItem>
-        <MenuItem value="A">A Shape</MenuItem>
-        <MenuItem value="G">G Shape</MenuItem>
-        <MenuItem value="E">E Shape</MenuItem>
-        <MenuItem value="D">D Shape</MenuItem>
+        <MenuItem value="none">None</MenuItem>
+        <MenuItem value="C">C</MenuItem>
+        <MenuItem value="A">A</MenuItem>
+        <MenuItem value="G">G</MenuItem>
+        <MenuItem value="E">E</MenuItem>
+        <MenuItem value="D">D</MenuItem>
       </Select>
     </FormControl>
   );

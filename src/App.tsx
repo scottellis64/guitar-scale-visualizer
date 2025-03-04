@@ -1,88 +1,31 @@
-import React from 'react';
-
-import { 
-  Container, 
-  Typography, 
-  Box, 
-  Paper,
-  ThemeProvider,
-  IconButton,
-  CssBaseline
-} from '@mui/material';
-
-import { Brightness4, Brightness7 } from '@mui/icons-material';
-import { darkTheme, defaultTheme } from 'themes';
+import React, { useEffect } from 'react';
+import { Box, Container, CssBaseline, ThemeProvider } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState, setIsDarkMode } from 'store';
-
-import {
-  RootNoteSelect,
-  DisplayTypeSelect,
-  ScaleTypeSelect,
-  ArpeggioTypeSelect,
-  NotationToggle,
-  ERelativePatternSelect,
-  Fretboard
-} from 'components';
+import { RootState } from 'store';
+import { darkTheme, defaultTheme } from 'themes';
+import { FretboardInstance, GuitarScaleVisualizerHeader } from 'components';
+import { addInstance } from 'store/guitar-slice';
 
 function App() {
   const dispatch = useDispatch();
-  const {
-    rootNote,
-    displayType,
-    scaleType,
-    arpeggioType,
-    useNashville,
-    isDarkMode,
-    cagedPattern,
-    eRelativePattern
-  } = useSelector((state: RootState) => state.guitar);
-
+  const isDarkMode = useSelector((state: RootState) => state.guitar.isDarkMode);
   const theme = isDarkMode ? darkTheme : defaultTheme;
+
+  useEffect(() => {
+    // Add a second instance when the app loads
+    dispatch(addInstance('second'));
+  }, [dispatch]);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Container maxWidth="lg">
         <Box sx={{ py: 4 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 4 }}>
-            <Typography variant="h3" component="h1">
-              Guitar Scale Visualizer
-            </Typography>
-            <IconButton 
-              onClick={() => dispatch(setIsDarkMode(!isDarkMode))} 
-              color="inherit"
-            >
-              {isDarkMode ? <Brightness7 /> : <Brightness4 />}
-            </IconButton>
+          <GuitarScaleVisualizerHeader />
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <FretboardInstance id="default" />
+            <FretboardInstance id="second" />
           </Box>
-          
-          <Paper sx={{ p: 2, mb: 2 }}>
-            <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
-              <RootNoteSelect />
-              <DisplayTypeSelect />
-              {displayType === 'scale' ? (
-                <ScaleTypeSelect />
-              ) : (
-                <ArpeggioTypeSelect />
-              )}
-              <NotationToggle />
-              <ERelativePatternSelect />
-            </Box>
-          </Paper>
-
-          <Paper sx={{ p: 2 }}>
-            <Fretboard 
-              rootNote={rootNote} 
-              type={displayType === 'scale' ? scaleType : arpeggioType}
-              frets={16} 
-              useNashville={useNashville}
-              isArpeggio={displayType === 'arpeggio'}
-              cagedPattern={cagedPattern}
-              eRelativePattern={eRelativePattern}
-              showTriads={displayType === 'triad'}  
-            />
-          </Paper>
         </Box>
       </Container>
     </ThemeProvider>
