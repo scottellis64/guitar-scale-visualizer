@@ -1,19 +1,19 @@
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, setDisplayType } from 'store';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { DisplayType } from 'types';
 
-export const DisplayTypeSelect = () => {
-  const dispatch = useDispatch();
-  const displayType = useSelector((state: RootState) => state.guitar.displayType);
+interface DisplayTypeSelectProps {
+  value: DisplayType;
+  onChange: (type: DisplayType) => void;
+}
 
+export const DisplayTypeSelect: React.FC<DisplayTypeSelectProps> = ({ value, onChange }) => {
   return (
     <FormControl size="small" sx={{ minWidth: 120 }}>
       <InputLabel>Display Type</InputLabel>
       <Select
-        value={displayType}
+        value={value}
         label="Display Type"
-        onChange={(e) => dispatch(setDisplayType(e.target.value as DisplayType))}
+        onChange={(e: SelectChangeEvent<DisplayType>) => onChange(e.target.value as DisplayType)}
       >
         <MenuItem value="scale">Scale</MenuItem>
         <MenuItem value="arpeggio">Arpeggio</MenuItem>

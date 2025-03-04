@@ -1,25 +1,25 @@
-import { FormControl, InputLabel, Select, MenuItem } from '@mui/material';
-import { useDispatch, useSelector } from 'react-redux';
-import { RootState, setArpeggioType } from 'store';
+import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
 import { ArpeggioType } from 'types';
 
-const ARPEGGIO_TYPES: ArpeggioType[] = ['major', 'minor', 'diminished', 'augmented', 'dominant7'];
+interface ArpeggioTypeSelectProps {
+  value: ArpeggioType;
+  onChange: (type: ArpeggioType) => void;
+}
 
-export const ArpeggioTypeSelect = () => {
-  const dispatch = useDispatch();
-  const arpeggioType = useSelector((state: RootState) => state.guitar.arpeggioType);
-
+export const ArpeggioTypeSelect: React.FC<ArpeggioTypeSelectProps> = ({ value, onChange }) => {
   return (
     <FormControl size="small" sx={{ minWidth: 120 }}>
       <InputLabel>Arpeggio Type</InputLabel>
       <Select
-        value={arpeggioType}
+        value={value}
         label="Arpeggio Type"
-        onChange={(e) => dispatch(setArpeggioType(e.target.value as ArpeggioType))}
+        onChange={(e: SelectChangeEvent<ArpeggioType>) => onChange(e.target.value as ArpeggioType)}
       >
-        {ARPEGGIO_TYPES.map(arpeggio => (
-          <MenuItem key={arpeggio} value={arpeggio}>{arpeggio}</MenuItem>
-        ))}
+        <MenuItem value="major">Major</MenuItem>
+        <MenuItem value="minor">Minor</MenuItem>
+        <MenuItem value="diminished">Diminished</MenuItem>
+        <MenuItem value="augmented">Augmented</MenuItem>
+        <MenuItem value="dominant7">Dominant 7</MenuItem>
       </Select>
     </FormControl>
   );

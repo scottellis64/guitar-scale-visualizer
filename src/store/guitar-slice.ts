@@ -1,68 +1,95 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
 import { Note, ScaleType, ArpeggioType, DisplayType, CagedPattern, ERelativePattern } from 'types';
 
-interface GuitarState {
+interface FretboardInstance {
+  id: string;
   rootNote: Note;
   displayType: DisplayType;
   scaleType: ScaleType;
   arpeggioType: ArpeggioType;
   useNashville: boolean;
+  cagedPattern: CagedPattern;
+  eRelativePattern: ERelativePattern;
+}
+
+interface GuitarState {
+  instances: Record<string, FretboardInstance>;
   isDarkMode: boolean;
-  cagedPattern: CagedPattern | null;
-  eRelativePattern: ERelativePattern | null;
 }
 
 const initialState: GuitarState = {
-  rootNote: 'A',
-  displayType: 'scale',
-  scaleType: 'major',
-  arpeggioType: 'major',
-  useNashville: false,
+  instances: {
+    'default': {
+      id: 'default',
+      rootNote: 'C',
+      displayType: 'scale',
+      scaleType: 'major',
+      arpeggioType: 'major',
+      useNashville: false,
+      cagedPattern: null,
+      eRelativePattern: null,
+    }
+  },
   isDarkMode: false,
-  cagedPattern: null,
-  eRelativePattern: null
 };
 
-export const guitarSlice = createSlice({
+const guitarSlice = createSlice({
   name: 'guitar',
   initialState,
   reducers: {
-    setRootNote: (state, action: PayloadAction<Note>) => {
-      state.rootNote = action.payload;
+    setRootNote: (state, action: PayloadAction<{ id: string; note: Note }>) => {
+      state.instances[action.payload.id].rootNote = action.payload.note;
     },
-    setDisplayType: (state, action: PayloadAction<DisplayType>) => {
-      state.displayType = action.payload;
+    setScaleType: (state, action: PayloadAction<{ id: string; type: ScaleType }>) => {
+      state.instances[action.payload.id].scaleType = action.payload.type;
     },
-    setScaleType: (state, action: PayloadAction<ScaleType>) => {
-      state.scaleType = action.payload;
+    setDisplayType: (state, action: PayloadAction<{ id: string; type: DisplayType }>) => {
+      state.instances[action.payload.id].displayType = action.payload.type;
     },
-    setArpeggioType: (state, action: PayloadAction<ArpeggioType>) => {
-      state.arpeggioType = action.payload;
+    setArpeggioType: (state, action: PayloadAction<{ id: string; type: ArpeggioType }>) => {
+      state.instances[action.payload.id].arpeggioType = action.payload.type;
     },
-    setUseNashville: (state, action: PayloadAction<boolean>) => {
-      state.useNashville = action.payload;
+    setUseNashville: (state, action: PayloadAction<{ id: string; useNashville: boolean }>) => {
+      state.instances[action.payload.id].useNashville = action.payload.useNashville;
     },
     setIsDarkMode: (state, action: PayloadAction<boolean>) => {
       state.isDarkMode = action.payload;
     },
-    setCagedPattern: (state, action: PayloadAction<CagedPattern | null>) => {
-      state.cagedPattern = action.payload;
+    setCagedPattern: (state, action: PayloadAction<{ id: string; pattern: CagedPattern }>) => {
+      state.instances[action.payload.id].cagedPattern = action.payload.pattern;
     },
-    setERelativePattern: (state, action: PayloadAction<ERelativePattern | null>) => {
-      state.eRelativePattern = action.payload;
-    }
+    setERelativePattern: (state, action: PayloadAction<{ id: string; pattern: ERelativePattern }>) => {
+      state.instances[action.payload.id].eRelativePattern = action.payload.pattern;
+    },
+    addInstance: (state, action: PayloadAction<string>) => {
+      state.instances[action.payload] = {
+        id: action.payload,
+        rootNote: 'C',
+        displayType: 'scale',
+        scaleType: 'major',
+        arpeggioType: 'major',
+        useNashville: false,
+        cagedPattern: null,
+        eRelativePattern: null,
+      };
+    },
+    removeInstance: (state, action: PayloadAction<string>) => {
+      delete state.instances[action.payload];
+    },
   },
 });
 
-export const { 
-  setRootNote, 
-  setDisplayType, 
-  setScaleType, 
-  setArpeggioType, 
+export const {
+  setRootNote,
+  setScaleType,
+  setDisplayType,
+  setArpeggioType,
   setUseNashville,
   setIsDarkMode,
   setCagedPattern,
-  setERelativePattern
+  setERelativePattern,
+  addInstance,
+  removeInstance,
 } = guitarSlice.actions;
 
 export default guitarSlice.reducer;  

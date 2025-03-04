@@ -2,7 +2,9 @@ import { Box, styled } from '@mui/material';
 import { GuitarTheme } from 'themes';
 import { FretMarkers } from 'components';
 
-const FretContainer = styled(Box)<{
+const FretContainer = styled(Box, {
+  shouldForwardProp: (prop) => !['isInScale', 'isArpeggio', 'isCagedPattern', 'isERelativePattern', 'showFretNumber', 'showMarkers'].includes(prop as string)
+})<{
   isInScale?: boolean;
   isArpeggio?: boolean;
   isCagedPattern?: boolean;

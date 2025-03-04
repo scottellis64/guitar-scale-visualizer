@@ -12,3 +12,5 @@ export { defaultTheme } from 'themes';
 export type { GuitarTheme } from 'themes';
 export { CagedPatternSelect } from './caged_pattern_select';
 export { ERelativePatternSelect } from './e_relative_pattern_select';
+export { GuitarScaleVisualizerHeader } from './guitar_scale_visualizer_header';
+export { FretboardInstance } from './fretboard-instance/FretboardInstance';
