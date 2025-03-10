@@ -13,6 +13,10 @@ module.exports = {
     '^components/(.*)$': '<rootDir>/src/components/$1',
     '^components$': '<rootDir>/src/components',
     '^utils/(.*)$': '<rootDir>/src/utils/$1',
-    '^utils$': '<rootDir>/src/utils'
+    '^utils$': '<rootDir>/src/utils',
+    '^hooks/(.*)$': '<rootDir>/src/hooks/$1',
+    '^hooks$': '<rootDir>/src/hooks',
+    '^themes/(.*)$': '<rootDir>/src/themes/$1',
+    '^themes$': '<rootDir>/src/themes'
   },
 }; 

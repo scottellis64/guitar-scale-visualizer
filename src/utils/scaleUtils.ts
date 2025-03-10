@@ -1,5 +1,7 @@
 import { Note, ScaleType, ArpeggioType, SCALES, ARPEGGIOS, ALL_NOTES } from 'types';
 
+export const STRING_NOTES = ['E2', 'B', 'G', 'D', 'A', 'E1'];
+
 export const calculateScale = (rootNote: Note, scaleType: ScaleType): Note[] => {
   const rootIndex = ALL_NOTES.indexOf(rootNote);
   const intervals = SCALES[scaleType].intervals;
