@@ -76,6 +76,9 @@ const guitarSlice = createSlice({
     removeInstance: (state, action: PayloadAction<string>) => {
       delete state.instances[action.payload];
     },
+    updateInstancesOrder: (state, action: PayloadAction<Record<string, FretboardInstance>>) => {
+      state.instances = action.payload;
+    },
   },
 });
 
@@ -90,6 +93,7 @@ export const {
   setERelativePattern,
   addInstance,
   removeInstance,
+  updateInstancesOrder,
 } = guitarSlice.actions;
 
 export default guitarSlice.reducer;  

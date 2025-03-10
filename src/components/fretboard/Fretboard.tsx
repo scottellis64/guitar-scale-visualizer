@@ -1,11 +1,10 @@
 import React from 'react';
 import { Box, styled } from '@mui/material';
-import { Note, ScaleType, ArpeggioType, ERelativePatternMapped, ERelativePattern, PatternPosition } from 'types';
-import { calculateScale, calculateArpeggio, isNoteInScale, getNashvilleNumber, getNoteAtFret } from 'utils';
+import { Note, ScaleType, ArpeggioType, ERelativePattern } from 'types';
 import './Fretboard.css';
 import { GuitarTheme } from 'themes';
 import { Fret, String } from 'components';
-import { getCagedPattern, getSelectedERelativeShape } from 'patterns';
+import { useFretboard, STANDARD_TUNING } from 'hooks';
 
 interface FretboardProps {
   rootNote: Note;
@@ -18,8 +17,6 @@ interface FretboardProps {
   cagedPattern?: string | null;
   eRelativePattern?: ERelativePattern;
 }
-
-const STANDARD_TUNING: Note[] = ['E', 'B', 'G', 'D', 'A', 'E'];
 
 // Styled components
 const FretboardContainer = styled(Box)(({ theme }) => ({
@@ -35,13 +32,6 @@ const FretboardWrapper = styled(Box)<{ orientation?: 'horizontal' | 'vertical' }
   gap: 2,
 }));
 
-// Add function to calculate triad notes
-const getTriadNotes = (rootNote: Note, scaleType: ScaleType): Note[] => {
-  const scale = calculateScale(rootNote, scaleType);
-  // Return root, third, and fifth of the scale
-  return [scale[0], scale[2], scale[4]];
-};
-
 export const Fretboard: React.FC<FretboardProps> = ({ 
   rootNote, 
   type,
@@ -53,37 +43,21 @@ export const Fretboard: React.FC<FretboardProps> = ({
   cagedPattern = null,
   eRelativePattern = null
 }) => {
-  const notes = isArpeggio 
-    ? calculateArpeggio(rootNote, type as ArpeggioType)
-    : showTriads 
-      ? getTriadNotes(rootNote, type as ScaleType)
-      : calculateScale(rootNote, type as ScaleType);
-  
-
-  const getDisplayValue = (note: Note): string => {
-    if (!isNoteInScale(note, notes)) return '';
-    return useNashville ? getNashvilleNumber(note, rootNote, type, isArpeggio) : note;
-  };
-
-  const cagedPositions = cagedPattern ? getCagedPattern(rootNote, cagedPattern) : [];
-  
-  const isInCagedPattern = (stringNum: number, fretNum: number) => {
-    return cagedPositions.some(pos => 
-      pos.string === stringNum && pos.fret === fretNum
-    );
-  };
-  
-  const isInERelativePattern = (stringNum: number, fretNum: number) => {
-    if (!eRelativePattern) return false;
-
-    const selectedERelativeShapes: ERelativePatternMapped[] = getSelectedERelativeShape(rootNote, 'major' as ScaleType, eRelativePattern);
-
-    return selectedERelativeShapes.some((selectedERelativeShape: ERelativePatternMapped) => {
-      return selectedERelativeShape.fretPositions.some((pos: PatternPosition) => {
-        return pos.string === stringNum && pos.fret === fretNum;
-      });
-    });
-  };
+  const {
+    getDisplayValue,
+    isInCagedPattern,
+    isInERelativePattern,
+    getNoteAtFret
+  } = useFretboard({
+    rootNote,
+    type,
+    frets,
+    useNashville,
+    isArpeggio,
+    showTriads,
+    cagedPattern,
+    eRelativePattern
+  });
 
   return (
     <FretboardContainer>
@@ -92,7 +66,6 @@ export const Fretboard: React.FC<FretboardProps> = ({
           <String key={stringIndex} orientation={orientation}>
             {Array.from({ length: frets + 1 }).map((_, fret) => {
               const note = getNoteAtFret(stringNote, fret);
-              const isInScale = isNoteInScale(note, notes);
               const displayValue = getDisplayValue(note);
               const isCagedPattern = cagedPattern ? isInCagedPattern(stringIndex + 1, fret) : false;
               const isERelativePattern = eRelativePattern ? isInERelativePattern(stringIndex + 1, fret) : false;
@@ -100,7 +73,7 @@ export const Fretboard: React.FC<FretboardProps> = ({
                 <Fret 
                   key={fret}
                   fret={fret}
-                  isInScale={isInScale}
+                  isInScale={!!displayValue}
                   isArpeggio={isArpeggio}
                   isCagedPattern={isCagedPattern}
                   isERelativePattern={isERelativePattern}

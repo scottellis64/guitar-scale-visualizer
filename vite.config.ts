@@ -14,7 +14,8 @@ export default defineConfig({
       patterns: "/src/patterns",
       types: "/src/types",
       themes: "/src/themes",
-      utils: "/src/utils"
+      utils: "/src/utils",
+      hooks: "/src/hooks"
     },
     extensions: ['.js', '.ts', '.jsx', '.tsx', '.json', '.index.ts', '.index.tsx']
   },
