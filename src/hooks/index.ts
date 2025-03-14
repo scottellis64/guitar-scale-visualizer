@@ -1,1 +1,2 @@
-export * from './useFretboard'; 
+export * from './useFretboardDispatch'; 
+export * from './useFretboardResize';

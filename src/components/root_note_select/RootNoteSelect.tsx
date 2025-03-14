@@ -1,7 +1,5 @@
 import { FormControl, InputLabel, Select, MenuItem, SelectChangeEvent } from '@mui/material';
-import { Note } from 'types';
-
-const NOTES: Note[] = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#'];
+import { Note, ALL_NOTES } from 'types';
 
 interface RootNoteSelectProps {
   value: Note;
@@ -17,7 +15,7 @@ export const RootNoteSelect: React.FC<RootNoteSelectProps> = ({ value, onChange 
         label="Root Note"
         onChange={(e: SelectChangeEvent<Note>) => onChange(e.target.value as Note)}
       >
-        {NOTES.map(note => (
+        {ALL_NOTES.map(note => (
           <MenuItem key={note} value={note}>{note}</MenuItem>
         ))}
       </Select>

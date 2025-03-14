@@ -1,20 +1,22 @@
 import React from 'react';
 import { Box, styled } from '@mui/material';
-import { Note, ScaleType, ArpeggioType, ERelativePattern } from 'types';
+import { Note, ScaleType, ArpeggioType, ERelativePattern, CagedPattern, STANDARD_TUNING } from 'types';
 import './Fretboard.css';
 import { GuitarTheme } from 'themes';
 import { Fret, String } from 'components';
-import { useFretboard, STANDARD_TUNING } from 'hooks';
+import { useFretboardDispatch } from 'hooks';
+import { getNoteAtFret } from 'utils';
 
 interface FretboardProps {
+  id: string;
   rootNote: Note;
-  type: ScaleType | ArpeggioType;
+  type: ScaleType | 'arpeggio';
   frets: number;
   useNashville?: boolean;
   isArpeggio?: boolean;
   orientation?: 'horizontal' | 'vertical';
   showTriads?: boolean;
-  cagedPattern?: string | null;
+  cagedPattern?: CagedPattern | null;
   eRelativePattern?: ERelativePattern;
 }
 
@@ -33,13 +35,10 @@ const FretboardWrapper = styled(Box)<{ orientation?: 'horizontal' | 'vertical' }
 }));
 
 export const Fretboard: React.FC<FretboardProps> = ({ 
-  rootNote, 
-  type,
+  id,
   frets = 15,
-  useNashville = false,
   isArpeggio = false,
   orientation = 'horizontal',
-  showTriads = false,
   cagedPattern = null,
   eRelativePattern = null
 }) => {
@@ -47,17 +46,7 @@ export const Fretboard: React.FC<FretboardProps> = ({
     getDisplayValue,
     isInCagedPattern,
     isInERelativePattern,
-    getNoteAtFret
-  } = useFretboard({
-    rootNote,
-    type,
-    frets,
-    useNashville,
-    isArpeggio,
-    showTriads,
-    cagedPattern,
-    eRelativePattern
-  });
+  } = useFretboardDispatch({ id });
 
   return (
     <FretboardContainer>
