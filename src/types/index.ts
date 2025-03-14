@@ -78,6 +78,7 @@ export const ARPEGGIOS: Record<ArpeggioType, ArpeggioDefinition> = {
   }
 };
 
+export const STANDARD_TUNING: Note[] = ['E', 'B', 'G', 'D', 'A', 'E'];
 export const ALL_NOTES: Note[] = ['A', 'A#', 'B', 'C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#']; 
 
 export type CagedPattern = 'C' | 'A' | 'G' | 'E' | 'D' | 'None' | null;

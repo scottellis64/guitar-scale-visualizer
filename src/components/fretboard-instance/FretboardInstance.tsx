@@ -1,70 +1,70 @@
 import React from 'react';
 import { Box, Paper } from '@mui/material';
 import { DisplayTypeSelect, ERelativePatternSelect, Fretboard, RootNoteSelect, ScaleTypeSelect, ArpeggioTypeSelect, NotationToggle, CagedPatternSelect } from 'components';
-import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from 'store';
-import { setRootNote, setDisplayType, setScaleType, setArpeggioType, setUseNashville, setCagedPattern, setERelativePattern } from 'store/guitar-slice';
+import { useFretboardDispatch } from 'hooks';
 
 interface FretboardInstanceProps {
   id: string;
 }
 
 export const FretboardInstance: React.FC<FretboardInstanceProps> = ({ id }) => {
-  const dispatch = useDispatch();
-  const instance = useSelector((state: RootState) => state.guitar.instances[id]);
-  
-  if (!instance) {
-    return null;
-  }
+  const { 
+    rootNote,
+    displayType,
+    scaleType,
+    useNashville,
+    cagedPattern,
+    eRelativePattern,
+    handleRootNoteChange,
+    handleDisplayTypeChange,
+    handleScaleTypeChange,
+    handleUseNashvilleChange,
+    handleCagedPatternChange,
+    handleERelativePatternChange
+   } = useFretboardDispatch({ id });
 
   return (
     <Box>
       <Paper sx={{ p: 2, mb: 2 }}>
         <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
           <RootNoteSelect 
-            value={instance.rootNote}
-            onChange={(note) => dispatch(setRootNote({ id, note }))}
+            value={rootNote}
+            onChange={handleRootNoteChange}
           />
           <DisplayTypeSelect 
-            value={instance.displayType}
-            onChange={(type) => dispatch(setDisplayType({ id, type }))}
+            value={displayType}
+            onChange={handleDisplayTypeChange}
           />
-          {instance.displayType === 'scale' ? (
-            <ScaleTypeSelect 
-              value={instance.scaleType}
-              onChange={(type) => dispatch(setScaleType({ id, type }))}
-            />
-          ) : (
-            <ArpeggioTypeSelect 
-              value={instance.arpeggioType}
-              onChange={(type) => dispatch(setArpeggioType({ id, type }))}
-            />
-          )}
+          <ScaleTypeSelect 
+            value={scaleType}
+            onChange={handleScaleTypeChange}
+          />
           <NotationToggle 
-            value={instance.useNashville}
-            onChange={(useNashville) => dispatch(setUseNashville({ id, useNashville }))}
+            value={useNashville}
+            onChange={handleUseNashvilleChange}
           />
           <CagedPatternSelect 
-            value={instance.cagedPattern}
-            onChange={(pattern) => dispatch(setCagedPattern({ id, pattern }))}
+            value={cagedPattern}
+            onChange={handleCagedPatternChange}
           />
           <ERelativePatternSelect 
-            value={instance.eRelativePattern}
-            onChange={(pattern) => dispatch(setERelativePattern({ id, pattern }))}
+            value={eRelativePattern}
+            onChange={handleERelativePatternChange}
           />
         </Box>
       </Paper>
 
       <Paper sx={{ p: 2 }}>
         <Fretboard 
-          rootNote={instance.rootNote} 
-          type={instance.displayType === 'scale' ? instance.scaleType : instance.arpeggioType}
+          id={id}
+          rootNote={rootNote} 
+          type={displayType === 'scale' ? scaleType : 'arpeggio'}
           frets={16} 
-          useNashville={instance.useNashville}
-          isArpeggio={instance.displayType === 'arpeggio'}
-          cagedPattern={instance.cagedPattern}
-          eRelativePattern={instance.eRelativePattern}
-          showTriads={instance.displayType === 'triad'}  
+          useNashville={useNashville}
+          isArpeggio={displayType === 'arpeggio'}
+          cagedPattern={cagedPattern}
+          eRelativePattern={eRelativePattern}
+          showTriads={displayType === 'triad'}  
         />
       </Paper>
     </Box>

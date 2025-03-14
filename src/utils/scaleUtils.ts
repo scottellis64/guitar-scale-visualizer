@@ -3,6 +3,10 @@ import { Note, ScaleType, ArpeggioType, SCALES, ARPEGGIOS, ALL_NOTES } from 'typ
 export const STRING_NOTES = ['E2', 'B', 'G', 'D', 'A', 'E1'];
 
 export const calculateScale = (rootNote: Note, scaleType: ScaleType): Note[] => {
+  if (! rootNote || ! scaleType) {
+    return [];
+  }
+
   const rootIndex = ALL_NOTES.indexOf(rootNote);
   const intervals = SCALES[scaleType].intervals;
   
@@ -10,6 +14,11 @@ export const calculateScale = (rootNote: Note, scaleType: ScaleType): Note[] => 
     const noteIndex = (rootIndex + interval) % 12;
     return ALL_NOTES[noteIndex];
   });
+};
+
+export const getTriadNotes = (rootNote: Note, scaleType: ScaleType): Note[] => {
+  const scale = calculateScale(rootNote, scaleType);
+  return [scale[0], scale[2], scale[4]];
 };
 
 export const calculateArpeggio = (rootNote: Note, arpeggioType: ArpeggioType): Note[] => {
