@@ -1,0 +1,1 @@
+export { FretboardInstance } from './FretboardInstance'; 

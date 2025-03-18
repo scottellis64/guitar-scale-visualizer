@@ -1,1 +1,0 @@
-export { FretboardConfigPanel } from './FretboardConfigPanel';

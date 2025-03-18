@@ -1,18 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Box, styled, IconButton } from '@mui/material';
+import { Box, styled, IconButton, Typography, FormControl } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { useDispatch } from 'react-redux';
+import CloseIcon from '@mui/icons-material/Close';
 
 import { getNashvilleNumber, getNoteAtFret } from 'utils';
 import { PearlIcon } from './icons/PearlIcon';
 import { useFretboardDispatch, useFretboardResize } from 'hooks';
 import { STANDARD_TUNING, Note, ScaleType, ERelativePattern } from 'types';
-import { FretboardConfigPanel, NoteTooltip } from 'components';
-import { addInstance, removeInstance } from 'store';
+import { ERelativePatternSelect, NoteTooltip, RootNoteSelect, ScaleTypeSelect, NotationToggle } from 'components';
 
 interface FretboardManualProps {
     id: string;
-    frets?: number;
     height?: number;
     fretWidth?: number;
     guitarNutWidth?: number;
@@ -47,7 +45,7 @@ interface GuitarNeckBoxProps {
 const GuitarNeckBox = styled(Box)<GuitarNeckBoxProps>(({ width = 100 }) => ({
     display: 'flex',
     width: `${width}%`,
-    minWidth: '500px',
+    minWidth: '667px',
     height: "100%",
     flexDirection: "row",
     justifyContent: "center",
@@ -114,7 +112,7 @@ const FretContainerBox = styled(Box)<FretContainerBoxProps>(({ width = 100 }) =>
 }));
 
 const getFretMarkerType = (fretIndex: number): MarkerType => {
-    const fretMarkerRelativeIndex = fretIndex % 12;
+    const fretMarkerRelativeIndex = (fretIndex - 1) % 12;
     if (fretMarkerRelativeIndex === 2 || fretMarkerRelativeIndex === 4 || fretMarkerRelativeIndex === 7) {
         return MarkerType.SINGLE;
     }
@@ -202,15 +200,35 @@ const FretSection: React.FC<FretSectionProps> = ({
     );
 };
 
+const Header = styled(Box)({
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '8px 16px',
+    backgroundColor: '#f5f5f5',
+    borderBottom: '1px solid #e0e0e0',
+    marginBottom: '8px',
+    borderRadius: '4px 4px 0 0',
+});
+
 const ConfigButton = styled(IconButton)({
-    position: 'absolute',
-    top: '-40px',
-    right: '8px',
-    zIndex: 4,
     color: '#666',
     '&:hover': {
         color: '#000',
     },
+});
+
+const ConfigContainer = styled(Box)({
+    display: 'flex',
+    alignItems: 'center',
+    paddingTop: '4px',
+    gap: '16px',
+    flex: 1,
+    marginRight: '16px',
+});
+
+const ConfigItem = styled(FormControl)({
+    minWidth: '120px',
 });
 
 const OpenNotesContainer = styled(Box)({
@@ -264,84 +282,135 @@ const OpenNotes: React.FC<OpenNotesProps> = ({ fretboardId }) => {
     );
 };
 
-const FretboardManual: React.FC<FretboardManualProps> = ({ 
-    id,
-    frets = 16, 
-    height = 100, 
-    fretWidth = 2,
-    guitarNutWidth = 10,
-}) => {
+export function FretboardManual({ id, height = 150, fretWidth = 2, guitarNutWidth = 10 }: FretboardManualProps) {
     const [isConfigOpen, setIsConfigOpen] = useState(false);
-
-    const dispatch = useDispatch();
-
-    useEffect(() => {
-        dispatch(addInstance(id));
-        return () => {
-            dispatch(removeInstance(id));
-        };
-    }, [id, dispatch]);
-
-    const {
+    const [isMeasuring, setIsMeasuring] = useState(true);
+    const { 
         rootNote,
         scaleType,
         useNashville,
+        getDisplayValue,
         isArpeggio,
         eRelativePattern,
-        notes,
-        getDisplayValue,
-        isInERelativePattern
+        isInERelativePattern,
+        handleRootNoteChange,
+        handleScaleTypeChange,
+        handleUseNashvilleChange,
+        handleERelativePatternChange
     } = useFretboardDispatch({ id });
 
-    const { fretWidths, neckRef } = useFretboardResize({ fretboardId: id });
+    const {
+        fretWidths,
+        neckRef
+    } = useFretboardResize({ fretboardId: id });
 
-    const handleConfigOpen = () => setIsConfigOpen(true);
-    const handleConfigClose = () => setIsConfigOpen(false);
+    // Set measuring to false once we have fret widths
+    useEffect(() => {
+        if (fretWidths.length > 0) {
+            setIsMeasuring(false);
+        }
+    }, [fretWidths]);
+
+    const getScaleDisplay = () => {
+        if (!rootNote || !scaleType) return 'No scale selected';
+        const scaleName = scaleType.charAt(0).toUpperCase() + scaleType.slice(1);
+        return `${rootNote} ${scaleName} Scale`;
+    };
+
+    const getPatternDisplay = () => {
+        if (eRelativePattern) {
+            return `E-Relative: ${eRelativePattern}`;
+        }
+        return null;
+    };
 
     return (
-        <Box sx={{ position: 'relative' }}>
-            <ConfigButton onClick={handleConfigOpen}>
-                <SettingsIcon />
-            </ConfigButton>
+        <Box 
+            sx={{ 
+                position: 'relative',
+                width: '100%',
+                visibility: isMeasuring ? 'hidden' : 'visible',
+                '&::before': isMeasuring ? {
+                    content: '""',
+                    display: 'block',
+                    width: '100%',
+                    paddingTop: `${(height / 667) * 100}%`,
+                } : {},
+            }}
+        >
+            <Header>
+                {isConfigOpen ? (
+                    <ConfigContainer>
+                        <ConfigItem size="small">
+                            <RootNoteSelect 
+                                value={rootNote}
+                                onChange={handleRootNoteChange}
+                            />
+                        </ConfigItem>
+                        <ConfigItem size="small">
+                            <ScaleTypeSelect 
+                                value={scaleType}
+                                onChange={handleScaleTypeChange}
+                            />
+                        </ConfigItem>
+                        <ConfigItem size="small">
+                            <ERelativePatternSelect 
+                                value={eRelativePattern}
+                                onChange={handleERelativePatternChange}
+                            />
+                        </ConfigItem>
+                        <ConfigItem size="small">
+                            <NotationToggle 
+                                value={useNashville}
+                                onChange={handleUseNashvilleChange}
+                            />
+                        </ConfigItem>
+                    </ConfigContainer>
+                ) : (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                        <Typography variant="subtitle1" sx={{ fontWeight: 500 }}>
+                            {getScaleDisplay()}
+                        </Typography>
+                        {getPatternDisplay() && (
+                            <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                                {getPatternDisplay()}
+                            </Typography>
+                        )}
+                    </Box>
+                )}
+                <ConfigButton
+                    onClick={() => setIsConfigOpen(!isConfigOpen)}
+                    size="small"
+                    aria-label={isConfigOpen ? "close configuration" : "open configuration"}
+                >
+                    {isConfigOpen ? <CloseIcon /> : <SettingsIcon />}
+                </ConfigButton>
+            </Header>
             <FretboardBox height={height}>
                 <OpenNotes fretboardId={id} />
-
                 <GuitarNut width={guitarNutWidth} />
                 <GuitarNeckBox ref={neckRef}>
-                    {Array.from({ length: frets }, (_, fretIndex) => (
-                        <React.Fragment key={`FRAG${fretIndex}`}>
-                            <FretSection 
+                    {fretWidths.map((width, index) => (
+                        <React.Fragment key={`fret-${index}`}>
+                            <FretSection
                                 fretboardId={id}
-                                fretWidth={fretWidths[fretIndex]} 
-                                fretIndex={fretIndex+1}
-                                notes={notes}
+                                fretWidth={width}
+                                fretIndex={index + 1}
+                                notes={STANDARD_TUNING}
                                 getDisplayValue={getDisplayValue}
                                 getNoteAtFret={getNoteAtFret}
                                 rootNote={rootNote}
                                 scaleType={scaleType}
-                                eRelativePattern={eRelativePattern}
-                                isInERelativePattern={isInERelativePattern}
                                 isArpeggio={isArpeggio}
                                 useNashville={useNashville}
-                                key={`FRETSECTION${fretIndex+1}`}
-                            />   
-                            {fretIndex !== frets - 1 && (
-                                <FretContainerBox 
-                                    width={fretWidth} 
-                                    key={`FRET${fretIndex+1}`} 
-                                />
-                            )}
+                                eRelativePattern={eRelativePattern}
+                                isInERelativePattern={isInERelativePattern}
+                            />
+                            <FretContainerBox width={fretWidth} />
                         </React.Fragment>
                     ))}
                 </GuitarNeckBox>
             </FretboardBox>
-            <FretboardConfigPanel
-                id={id}
-                open={isConfigOpen}
-                onClose={handleConfigClose}
-            />
         </Box>
     );
-};
-
-export default FretboardManual;
+}
