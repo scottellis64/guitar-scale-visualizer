@@ -234,6 +234,12 @@ export const getSelectedERelativeShape = (rootOfScale: Note, scaleType: ScaleTyp
 }
 
 export const getERelativeShapesInScale = (rootOfScale: Note, scaleType: ScaleType): ERelativePatternMapped[] => {
+  let shapeOffset = 0;
+  if (rootOfScale.length > 1) {
+    rootOfScale = rootOfScale.charAt(0) as Note;
+    shapeOffset = 1;
+  }
+
   const rootShape = E_RELATIVE_SHAPES[rootOfScale];
 
   const patternNumbers = sortPatternNumbersByRoot(rootShape.root);
@@ -251,7 +257,7 @@ export const getERelativeShapesInScale = (rootOfScale: Note, scaleType: ScaleTyp
       fretPositions: patternShape.pattern.map((position) => {
         return {
           string: position.string,
-          fret: position.fret + fretShift
+          fret: position.fret + fretShift + shapeOffset
         }
       })
     };

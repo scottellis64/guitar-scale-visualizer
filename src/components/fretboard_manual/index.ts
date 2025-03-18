@@ -1,1 +1,1 @@
-export { default as FretboardManual } from './FretboardManual'; 
+export * from './FretboardManual'; 

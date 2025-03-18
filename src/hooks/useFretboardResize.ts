@@ -1,4 +1,4 @@
-import { RefObject, useCallback, useEffect, useState, useRef } from 'react';
+import { RefObject, useCallback, useState, useRef, useLayoutEffect } from 'react';
 import { debounce } from 'lodash';
 import { useFretboardDispatch } from 'hooks';
 
@@ -31,7 +31,7 @@ export const useFretboardResize = ({ fretboardId }: UseFretboardResizeProps): Us
         [neckRef]
     );
 
-    useEffect(() => {
+    useLayoutEffect(() => {
        debouncedMeasure();
         window.addEventListener('resize', debouncedMeasure);
         return () => {
@@ -40,7 +40,7 @@ export const useFretboardResize = ({ fretboardId }: UseFretboardResizeProps): Us
         };
     }, [debouncedMeasure]);
 
-    useEffect(() => {
+    useLayoutEffect(() => {
         const availableLength = actualLength;
         const fretDistances = Array.from({ length: frets }, (_, fretIndex) => 
             availableLength - (availableLength / Math.pow(2, (fretIndex + 1) / 12))
