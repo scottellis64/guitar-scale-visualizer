@@ -1,3 +1,48 @@
+# Guitar App
+
+A guitar application with a React client and Express server.
+
+## Project Structure
+
+```
+.
+├── client/           # React frontend application
+│   ├── src/         # Client source code
+│   ├── public/      # Static assets
+│   └── package.json # Client dependencies
+├── server/          # Express backend application
+│   ├── src/         # Server source code
+│   └── package.json # Server dependencies
+└── package.json     # Root package.json for managing both client and server
+```
+
+## Setup
+
+1. Install dependencies:
+   ```bash
+   yarn install-all
+   ```
+
+2. Start development servers:
+   ```bash
+   yarn dev
+   ```
+   This will start both the client (Vite) and server (Express) in development mode.
+
+3. Build for production:
+   ```bash
+   yarn build
+   ```
+
+## Development
+
+- Client runs on http://localhost:5173
+- Server runs on http://localhost:3001
+
+## API Endpoints
+
+- GET /api/scales - Returns a list of musical scales
+
 *Guitar Fretboard Visualizer*
 
 This project is inspired by my personal journey into learning how to play guitar.  Everything is available online today for the hungry mind. When I was growing up, your two choices were to either find a guitar instructor or learn from books and magazines, or both.  Now with YouTube, Facebook, Instagram, et al, choices are nearly unlimited.
@@ -36,7 +81,7 @@ It's only just begun and the same functionality can be found in other github rep
 
 From the root of the project:
 ```bash
-yarn install
+yarn install-all
 ```
 
 This installs all of your dependencies and makes the application ready to work on.
@@ -54,7 +99,7 @@ yarn build
 The build command builds all artifacts in the dist folder.  If you want to run the application in prod mode, you can install _serve_ globally:
 
 ```bash
-npm install serve --global
+yarn global add serve
 ```
 
 I'm going from memory on that one.  Here's how to start it up:
