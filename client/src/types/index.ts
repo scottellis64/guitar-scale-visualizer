@@ -117,3 +117,14 @@ export interface ERelativePatternMapped {
   closed: boolean;
   fretPositions: PatternPosition[];
 }
+
+export interface Scale {
+  id: string;
+  name: string;
+  intervals: number[];
+}
+
+export interface ApiResponse<T> {
+  data: T;
+  error?: string;
+}
