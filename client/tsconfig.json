@@ -17,6 +17,7 @@
     "noFallthroughCasesInSwitch": true,
     "baseUrl": ".",
     "paths": {
+      "@guitar-app/shared": ["../shared/src"],
       "src/*": ["./src/*"],
       "components":["./src/components"],
       "components/*":["./src/components/*"],

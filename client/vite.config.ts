@@ -8,6 +8,7 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
+      '@guitar-app/shared': path.resolve(__dirname, '../shared/src'),
       src: "/src",
       components: "/src/components",
       store: "/src/store",

@@ -22,4 +22,6 @@ export interface FacebookReel {
 export interface DownloadReelRequest {
   url: string;
   title?: string;
-} 
+}
+
+export const API_BASE_URL = 'http://localhost:3001/api'; 
