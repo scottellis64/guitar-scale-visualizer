@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, styled } from '@mui/material';
-import { Note, ScaleType, ArpeggioType, ERelativePattern, CagedPattern, STANDARD_TUNING } from 'types';
+import { Note, ScaleType, ERelativePattern, CagedPattern, STANDARD_TUNING } from 'types';
 import './Fretboard.css';
 import { GuitarTheme } from 'themes';
 import { Fret, String } from 'components';

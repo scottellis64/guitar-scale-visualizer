@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Paper } from '@mui/material';
-import { DisplayTypeSelect, ERelativePatternSelect, Fretboard, RootNoteSelect, ScaleTypeSelect, ArpeggioTypeSelect, NotationToggle, CagedPatternSelect } from 'components';
+import { DisplayTypeSelect, ERelativePatternSelect, Fretboard, RootNoteSelect, ScaleTypeSelect, NotationToggle, CagedPatternSelect } from 'components';
 import { useFretboardDispatch } from 'hooks';
 
 interface FretboardInstanceProps {

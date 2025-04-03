@@ -5,7 +5,8 @@ import { RootState } from 'store';
 import { darkTheme, defaultTheme } from 'themes';
 import { FretboardInstance, GuitarAppDashboard, FretboardManual } from 'components';
 import { addInstance } from 'store/guitar-slice';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom/dist';
 
 function App() {
   const dispatch = useDispatch();

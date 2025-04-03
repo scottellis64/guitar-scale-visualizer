@@ -1,7 +1,7 @@
 import { useCallback, useMemo } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, setRootNote, setDisplayType, setScaleType, setUseNashville, setCagedPattern, setERelativePattern, setFrets, setFretWidth } from 'store';
-import { Note, ScaleType, DisplayType, CagedPattern, ERelativePattern, ERelativePatternMapped, PatternPosition } from 'types';
+import { Note, ScaleType, DisplayType, CagedPattern, ERelativePattern, ERelativePatternMapped, PatternPosition, ArpeggioType } from 'types';
 import { getSelectedERelativeShape } from 'patterns';
 import { calculateScale, calculateArpeggio, isNoteInScale, getNashvilleNumber, getTriadNotes, getCagedPattern } from 'utils';
 
