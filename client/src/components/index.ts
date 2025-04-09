@@ -15,3 +15,4 @@ export { FretboardInstance } from './fretboard_instance';
 export { FretboardManual } from './fretboard_manual';
 export { NoteTooltip } from './note-tooltip';
 export { GuitarAppDashboard } from './guitar_app_dashboard';
+export { GuitarTablature } from './guitar_tablature';

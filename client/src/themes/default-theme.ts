@@ -13,7 +13,20 @@ declare module '@mui/material/styles' {
       noteText: string;
       cagedPattern: string;
       eRelativePattern: string;
-    }
+    };
+    tablature: {
+      fontFamily: string;
+      fontSize: string;
+      fontWeight: string;
+      color: string;
+      columnWidth: string;
+      columnContentWidth: string;
+      columnContentHeight: string;
+      lineBorder: string;
+      tabButtonBackground: string;
+      tabButtonBorder: string;
+      tabButtonHover: string;
+    };
   }
   interface Theme extends CustomTheme {}
   interface ThemeOptions extends Partial<CustomTheme> {}
@@ -54,6 +67,19 @@ export const defaultTheme = createTheme({
     noteText: '#ffffff',
     cagedPattern: '#FF5722',
     eRelativePattern: '#FF5722',
+  },
+  tablature: {
+    fontFamily: "'Courier New', monospace",
+    fontSize: '14px',
+    fontWeight: 'bold',
+    color: '#000000',
+    columnWidth: '28px',
+    columnContentWidth: '24px',
+    columnContentHeight: '24px',
+    lineBorder: '1px solid black',
+    tabButtonBackground: 'white',
+    tabButtonBorder: '1px solid #ccc',
+    tabButtonHover: 'rgb(169, 148, 148)',
   },
   components: {
     MuiPaper: {
