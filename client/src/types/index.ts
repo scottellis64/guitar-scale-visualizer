@@ -128,3 +128,42 @@ export interface ApiResponse<T> {
   data: T;
   error?: string;
 }
+
+export enum TransitionType {
+  None = 'None',
+  Slur = 'Slur',
+  Bend = 'Bend',
+  PullOff = 'PullOff',
+  HammerOn = 'HammerOn',
+  Tap = 'Tap',
+  Slide = 'Slide',
+  Harmonic = 'Harmonic',
+}
+
+export enum Timing {
+  Whole = '1',
+  Half = '1/2',
+  Quarter = '1/4',
+  Eighth = '1/8',
+  Sixteenth = '1/16',
+}
+
+export interface NotePosition {
+  id?: string;
+  timing?: Timing;
+  string: number;
+  transitionType?: TransitionType;
+  fromId?: string;
+}
+
+export interface TablatureSectionType {
+  id?: string;
+  fret: number;
+  notes: NotePosition[];
+}
+
+export interface Tablature {
+  id?: string;
+  name?: string;
+  columns: TablatureSectionType[];
+}
