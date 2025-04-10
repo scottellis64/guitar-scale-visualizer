@@ -1,0 +1,14 @@
+version: '3.9'
+
+services:
+  ffmpeg-server:
+    build:
+      context: .
+    ports:
+      - '8080:8080'
+    volumes:
+      - './data:/app/data'
+    environment:
+      - NODE_ENV=development
+      - PORT=8080
+      - HOST=0.0.0.0

@@ -5,9 +5,10 @@
   "scripts": {
     "client": "cd client && yarn dev",
     "server": "cd server && yarn dev",
-    "dev": "concurrently \"yarn client\" \"yarn server\"",
-    "install-all": "yarn install && cd shared && yarn install && cd ../client && yarn install && cd ../server && yarn install",
-    "build": "cd shared && yarn build && cd ../client && yarn build && cd ../server && yarn build"
+    "ffmpeg_server": "cd ffmpeg_server && yarn dev:docker",
+    "dev": "concurrently \"yarn client\" \"yarn server\" \"yarn ffmpeg_server\"",
+    "install-all": "yarn install && cd shared && yarn install && cd ../client && yarn install && cd ../server && yarn install && cd ../ffmpeg_server && yarn install",
+    "build": "cd shared && yarn build && cd ../client && yarn build && cd ../server && yarn build && cd ../ffmpeg_server && yarn build"
   },
   "devDependencies": {
     "concurrently": "^8.2.2"
