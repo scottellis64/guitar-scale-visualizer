@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { FacebookReel, ApiResponse, API_BASE_URL } from '@guitar-app/shared';
-
+import { FacebookReel, ApiResponse } from '@guitar-app/shared';
+import { API_CONFIG } from 'src/config';
 export const useReels = () => {
   const [reels, setReels] = useState<FacebookReel[]>([]);
   const [loading, setLoading] = useState(true);
@@ -9,7 +9,7 @@ export const useReels = () => {
   const fetchReels = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_BASE_URL}/reels`);
+      const response = await fetch(`${API_CONFIG.SERVER.BASE_URL}/reels`);
       if (!response.ok) throw new Error('Failed to fetch reels');
       const data: ApiResponse<FacebookReel[]> = await response.json();
       setReels(data.data);
@@ -22,7 +22,7 @@ export const useReels = () => {
 
   const downloadReel = async (url: string, title?: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/reels/download`, {
+      const response = await fetch(`${API_CONFIG.SERVER.BASE_URL}/reels/download`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url, title })

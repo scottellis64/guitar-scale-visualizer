@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
 import { CssBaseline, ThemeProvider } from '@mui/material';
 import { useSelector, useDispatch } from 'react-redux';
-import { RootState } from 'store';
+import { RootState, addInstance } from 'store';
 import { darkTheme, defaultTheme } from 'themes';
-import { FretboardInstance, GuitarAppDashboard, FretboardManual } from 'components';
-import { addInstance } from 'store/guitar-slice';
+import { FretboardInstance, GuitarAppDashboard, FretboardManual, VideoPage, AudioPage } from 'components';
 import { BrowserRouter } from 'react-router-dom';
 import { Routes, Route, Navigate } from 'react-router-dom/dist';
 
@@ -32,6 +31,14 @@ function App() {
             <Route 
               path="/fretboard-manual" 
               element={<FretboardManual id="manual-instance" />} 
+            />
+            <Route 
+              path="/videos" 
+              element={<VideoPage />} 
+            />
+            <Route 
+              path="/audio" 
+              element={<AudioPage />} 
             />
           </Routes>
         </GuitarAppDashboard>

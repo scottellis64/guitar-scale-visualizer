@@ -1,0 +1,16 @@
+.video-player {
+    padding: 1rem;
+}
+
+.video-player video {
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    display: block;
+}
+
+.no-video {
+    text-align: center;
+    padding: 2rem;
+    color: #666;
+} 

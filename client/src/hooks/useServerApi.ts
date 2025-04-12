@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
+
 import { Scale } from 'types';
 
-const API_BASE_URL = 'http://localhost:3001/api';
+import { API_CONFIG } from 'src/config';
+
+const API_BASE_URL = API_CONFIG.SERVER.BASE_URL;
 
 export const useServerApi = () => {
   const [scales, setScales] = useState<Scale[]>([]);

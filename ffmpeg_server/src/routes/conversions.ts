@@ -1,28 +1,108 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import ffmpeg from 'fluent-ffmpeg';
 import { promises as fs } from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
+import multer from 'multer';
+import { PassThrough, Readable } from 'stream';
 
 const execAsync = promisify(exec);
 const router = Router();
+const upload = multer({ storage: multer.memoryStorage() });
 
-router.post('/convert', (req, res) => {
-    const { file } = req.body;
-    res.contentType('audio/mp3');
-    res.attachment('myfile.mp3');
+// Define a custom request type
+type CustomRequest = Request & {
+    file?: {
+        buffer: Buffer;
+        originalname: string;
+        mimetype: string;
+    };
+};
 
-    const convertFileFQPN: string = `/app/data/inbound/${file}`;
-    
-    ffmpeg(convertFileFQPN)
-        .toFormat('mp3')
-        .on('end', () => {
-            console.log('Audio conversion completed successfully');
-        })
-        .on('error', (err: Error) => {
-            console.error('Error during audio conversion:', err.message);
-        })
-        .pipe(res, { end: true });
+// Handle file upload and conversion
+const uploadMiddleware = upload.single('file');
+
+router.post('/convert', (req: CustomRequest, res: Response) => {
+    uploadMiddleware(req as any, res as any, async (err: any) => {
+        if (err) {
+            return res.status(400).json({ error: err.message });
+        }
+
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'No file uploaded' });
+            }
+
+            // Create temporary file paths
+            const tempInputPath = `/tmp/${Date.now()}_input.mp4`;
+            const tempOutputPath = `/tmp/${Date.now()}_output.mp3`;
+
+            // Write input file
+            await fs.writeFile(tempInputPath, req.file.buffer);
+
+            // Set response headers
+            res.set('Content-Type', 'audio/mpeg');
+            res.set('Accept-Ranges', 'bytes');
+
+            // Process the video with ffmpeg
+            ffmpeg(tempInputPath)
+                .noVideo()
+                .audioCodec('libmp3lame')
+                .audioBitrate(192)
+                .format('mp3')
+                .output(tempOutputPath)
+                .on('start', (commandLine) => {
+                    console.log('Started FFmpeg with command:', commandLine);
+                })
+                .on('progress', (progress) => {
+                    console.log('Processing: ', progress.percent, '% done');
+                })
+                .on('end', async () => {
+                    console.log('FFmpeg processing finished');
+                    try {
+                        // Read and stream the output file
+                        const outputBuffer = await fs.readFile(tempOutputPath);
+                        res.send(outputBuffer);
+                        
+                        // Clean up temporary files
+                        await fs.unlink(tempInputPath);
+                        await fs.unlink(tempOutputPath);
+                    } catch (error) {
+                        console.error('Error handling output file:', error);
+                        res.status(500).json({ error: 'Failed to process output file' });
+                    }
+                })
+                .on('error', async (err) => {
+                    console.error('FFmpeg conversion error:', err);
+                    try {
+                        // Clean up temporary files
+                        await fs.unlink(tempInputPath);
+                        await fs.unlink(tempOutputPath).catch(() => {});
+                    } catch (error) {
+                        console.error('Error cleaning up temp files:', error);
+                    }
+                    if (!res.headersSent) {
+                        res.status(500).json({ error: 'Failed to convert video to audio' });
+                    }
+                })
+                .run();
+
+            // Handle client disconnect
+            req.on('close', async () => {
+                try {
+                    // Clean up temporary files
+                    await fs.unlink(tempInputPath);
+                    await fs.unlink(tempOutputPath).catch(() => {});
+                } catch (error) {
+                    console.error('Error cleaning up temp files:', error);
+                }
+            });
+
+        } catch (error) {
+            console.error('Video conversion error:', error);
+            res.status(500).json({ error: 'Failed to convert video to audio' });
+        }
+    });
 });
 
 router.get('/files', async (_req, res) => {
