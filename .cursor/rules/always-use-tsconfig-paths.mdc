@@ -1,0 +1,25 @@
+Rule Name: always-use-tsconfig-paths.mdc
+Description: 
+Always use tsconfig paths for imports when possible. This includes:
+- Using @guitar-app/shared for shared package imports
+- Using src/* for local imports
+- Using components/* for component imports
+- Using hooks/* for hook imports
+- Using store/* for store imports
+- Using patterns/* for pattern imports
+- Using types/* for type imports
+- Using themes/* for theme imports
+- Using utils/* for utility imports
+
+Example:
+```typescript
+// Good
+import { Audio } from '@guitar-app/shared';
+import { useAudioApi } from 'hooks';
+import { Button } from 'components/common';
+
+// Bad
+import { Audio } from '../../../shared/src';
+import { useAudioApi } from '../../hooks';
+import { Button } from '../common/Button';
+``` 

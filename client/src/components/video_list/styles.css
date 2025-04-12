@@ -1,0 +1,26 @@
+.video-list {
+    padding: 1rem;
+}
+
+.video-list ul {
+    list-style: none;
+    padding: 0;
+}
+
+.video-list li {
+    margin: 0.5rem 0;
+}
+
+.video-list button {
+    width: 100%;
+    padding: 0.5rem;
+    text-align: left;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+}
+
+.video-list button:hover {
+    background: #f0f0f0;
+} 

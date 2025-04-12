@@ -1,7 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { appRouter, facebookRouter } from './routes';
+import mongoose from 'mongoose';
+import { appRouter, facebookRouter } from 'routes';
 
 // Load environment variables
 dotenv.config();
@@ -9,7 +10,18 @@ dotenv.config();
 const app = express();
 const port = process.env.PORT || 3001;
 
-// In-memory storage for reels (replace with database in production)
+// MongoDB connection
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://sellis:sellis@localhost:27017/guitar-app';
+
+mongoose.connect(MONGODB_URI)
+  .then(() => {
+    console.log('Connected to MongoDB');
+  })
+  .catch((error) => {
+    console.error('MongoDB connection error:', error);
+    process.exit(1);
+  });
+
 app.use(cors());
 app.use(express.json());
 

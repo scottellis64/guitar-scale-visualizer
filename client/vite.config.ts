@@ -30,4 +30,7 @@ export default defineConfig({
       reporter: ['text', 'json', 'html'],
     }
   },
+  define: {
+    'process.env': process.env
+  }
 } as VitestConfig); 

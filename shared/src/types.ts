@@ -24,4 +24,21 @@ export interface DownloadReelRequest {
   title?: string;
 }
 
-export const API_BASE_URL = 'http://localhost:3001/api'; 
+export interface Audio {
+  id: string;
+  filename: string;
+  length: number;
+  uploadDate: string;
+  contentType?: string;
+  duration: number;
+  title: string;
+  artist: string;
+} 
+
+export interface Video {
+  id: string;
+  filename: string;
+  length: number;
+  uploadDate: string;
+  contentType?: string;
+} 

@@ -2,6 +2,11 @@
 
 A guitar application with a React client and Express server.
 
+## Research these resources
+
+- [ytdlp-nodejs](https://github.com/iqbal-rashed/ytdlp-nodejs)
+- tutorial for building a full stack streaming app on [Medium](https://medium.com/@phuongnamle0411/create-a-full-stack-streaming-app-using-react-node-js-and-mongodb-a-step-by-step-guide-9024dedb6f53)
+
 ## Project Structure
 
 ```

@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { DashboardLayout, AppProvider, PageContainer, type NavigationItem, type Router } from '@toolpad/core';
-import { Typography, Stack } from '@mui/material';
+import { Typography, Stack, Button, Box } from '@mui/material';
 import DashboardIcon from '@mui/icons-material/Dashboard';
 import MusicNoteIcon from '@mui/icons-material/MusicNote';
 import TuneIcon from '@mui/icons-material/Tune';
+import VideoLibraryIcon from '@mui/icons-material/VideoLibrary';
+import AudiotrackIcon from '@mui/icons-material/Audiotrack';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { VideoList, VideoPlayer } from 'components';
 
 const NAVIGATION: NavigationItem[] = [
   {
@@ -29,6 +32,18 @@ const NAVIGATION: NavigationItem[] = [
     title: 'Fretboard Manual',
     icon: <TuneIcon />,
   },
+  {
+    kind: 'page',
+    segment: 'videos',
+    title: 'Videos',
+    icon: <VideoLibraryIcon />,
+  },
+  {
+    kind: 'page',
+    segment: 'audio',
+    title: 'Audio',
+    icon: <AudiotrackIcon />,
+  },
 ];
 
 interface GuitarAppDashboardProps {
@@ -38,6 +53,8 @@ interface GuitarAppDashboardProps {
 export function GuitarAppDashboard({ children }: GuitarAppDashboardProps) {
   const location = useLocation();
   const navigate = useNavigate();
+  const [selectedVideoId, setSelectedVideoId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'scales' | 'videos'>('scales');
 
   // Create router object compatible with @toolpad/core
   const toolpadRouter: Router = React.useMemo(() => ({
@@ -56,12 +73,42 @@ export function GuitarAppDashboard({ children }: GuitarAppDashboardProps) {
           <Stack spacing={3} sx={{ p: 3 }}>
             {children || (
               <>
-                <Typography variant="h4" gutterBottom>
-                  Welcome to Guitar Tools
-                </Typography>
-                <Typography>
-                  Select a tool from the navigation menu to get started.
-                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
+                  <Button
+                    variant={activeTab === 'scales' ? 'contained' : 'outlined'}
+                    onClick={() => setActiveTab('scales')}
+                  >
+                    Scales
+                  </Button>
+                  <Button
+                    variant={activeTab === 'videos' ? 'contained' : 'outlined'}
+                    onClick={() => setActiveTab('videos')}
+                  >
+                    Videos
+                  </Button>
+                </Box>
+
+                {activeTab === 'scales' && (
+                  <>
+                    <Typography variant="h4" gutterBottom>
+                      Welcome to Guitar Tools
+                    </Typography>
+                    <Typography>
+                      Select a tool from the navigation menu to get started.
+                    </Typography>
+                  </>
+                )}
+
+                {activeTab === 'videos' && (
+                  <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ width: '300px' }}>
+                      <VideoList onSelectVideo={setSelectedVideoId} />
+                    </Box>
+                    <Box sx={{ flex: 1 }}>
+                      <VideoPlayer videoId={selectedVideoId} />
+                    </Box>
+                  </Box>
+                )}
               </>
             )}
           </Stack>
