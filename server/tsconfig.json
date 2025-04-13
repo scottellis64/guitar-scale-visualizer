@@ -12,7 +12,9 @@
     "resolveJsonModule": true,
     "baseUrl": ".",
     "paths": {
-      "models": ["src/models"],
+      "@models/*": ["src/models/*"],
+      "@routes/*": ["src/routes/*"],
+      "@types/*": ["src/types/*"],
       "*": ["node_modules/*"]
     }
   },

@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { body, validationResult } from 'express-validator';
-import { User } from 'models';
+import { User } from '../models/User';
 import mongoose from 'mongoose';
 import { Db } from 'mongodb';
 import { Scale } from '../models/Scale';

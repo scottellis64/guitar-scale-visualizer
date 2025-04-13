@@ -2,6 +2,7 @@ version: '3.9'
 
 services:
   ffmpeg-server:
+    container_name: ffmpeg-server
     build:
       context: .
     ports:
@@ -9,8 +10,21 @@ services:
       - '9229:9229'
     volumes:
       - './data:/app/data'
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - NODE_ENV=development
       - PORT=8080
       - HOST=0.0.0.0
       - DEBUG_MODE=${DEBUG_MODE:-false}
+    restart: unless-stopped
+    depends_on:
+      - yt-dlp
+
+  yt-dlp:
+    container_name: yt-dlp
+    build:
+      context: .
+      dockerfile: yt-dlp.Dockerfile
+    volumes:
+      - './data/youtube:/app/data/youtube'
+    restart: unless-stopped

@@ -2,14 +2,13 @@ import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import audioRoutes from './routes/audio_routes';
-import userRoutes from './routes/user_routes';
+import { appRouter, facebookRouter, audioRouter, userRouter, videoRouter } from './routes';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
@@ -17,8 +16,11 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/audio', audioRoutes);
-app.use('/api/users', userRoutes);
+app.use('/api/app', appRouter);
+app.use('/api/fb', facebookRouter);
+app.use('/api/audio', audioRouter);
+app.use('/api/users', userRouter);
+app.use('/api/videos', videoRouter);
 
 // Error handling middleware
 app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
@@ -27,7 +29,9 @@ app.use((err: Error, req: express.Request, res: express.Response, next: express.
 });
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/audio-app')
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://sellis:sellis@localhost:27017/guitar-app';
+
+mongoose.connect(MONGODB_URI)
     .then(() => {
         console.log('Connected to MongoDB');
         // Start server
