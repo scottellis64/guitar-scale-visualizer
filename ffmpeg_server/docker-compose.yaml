@@ -6,9 +6,11 @@ services:
       context: .
     ports:
       - '8080:8080'
+      - '9229:9229'
     volumes:
       - './data:/app/data'
     environment:
       - NODE_ENV=development
       - PORT=8080
       - HOST=0.0.0.0
+      - DEBUG_MODE=${DEBUG_MODE:-false}
