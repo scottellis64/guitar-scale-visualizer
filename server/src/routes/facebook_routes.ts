@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import axios from 'axios';
-import { FacebookReel, DownloadReelRequest } from '@guitar-app/shared';
+import { FacebookReel, DownloadReelRequest } from '../types/facebook';
 
 const router = Router();
 

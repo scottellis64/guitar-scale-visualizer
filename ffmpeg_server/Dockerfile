@@ -1,34 +1,39 @@
 FROM node:21-alpine3.19
 
+# Set environment variables
 ARG NODE_ENV=development
 ENV NODE_ENV=${NODE_ENV}
 ENV DEBUG_MODE=false
 
+# Install system dependencies and setup Docker access
+RUN apk upgrade -U \ 
+    && apk add ca-certificates ffmpeg libva-intel-driver docker \
+    && rm -rf /var/cache/* \
+    && if ! getent group docker >/dev/null; then addgroup -S docker; fi \
+    && if ! id -u node >/dev/null 2>&1; then adduser -S node; fi \
+    && addgroup node docker
+
+# Create app directory
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
 
-# Copy package files first for better caching
+# Copy package files and install dependencies
 COPY package.json yarn.lock ./
-RUN yarn install --frozen-lockfile && \
+RUN yarn install && \
     yarn cache clean
 
-# Copy source files, excluding nodemon.json
+# Copy and build source code
 COPY . .
-RUN rm -f nodemon.json
+RUN rm -f nodemon.json && \
+    yarn build
 
-# Build TypeScript with source maps
-RUN yarn build
-
-RUN apk upgrade -U \ 
-    && apk add ca-certificates ffmpeg libva-intel-driver \
-    && rm -rf /var/cache/*
+# Setup start script
+COPY start.sh /usr/src/app/
+RUN chmod +x /usr/src/app/start.sh
 
 EXPOSE 8080
 EXPOSE 9229
 
-# Start script that handles both debug and non-debug modes
-COPY start.sh /usr/src/app/
-RUN chmod +x /usr/src/app/start.sh
 CMD ["/usr/src/app/start.sh"]
 
 

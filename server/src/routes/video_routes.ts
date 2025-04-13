@@ -320,4 +320,90 @@ router.get('/conversions/:id/audio', async (req: Request, res: Response) => {
     }
 });
 
+// Download YouTube video and save to MongoDB
+router.post('/youtube', async (req: Request, res: Response) => {
+    try {
+        const { url, quality = 'best', title, description } = req.body;
+        
+        if (!url) {
+            return res.status(400).json({ error: 'YouTube URL is required' });
+        }
+
+        if (!mongoose.connection.readyState) {
+            return res.status(503).json({ error: 'Database not ready' });
+        }
+
+        // Download video from ffmpeg-server
+        const downloadResponse = await axios.post(`${process.env.FFMPEG_SERVER_URL}/youtube/download`, {
+            url,
+            quality
+        }, {
+            responseType: 'arraybuffer'
+        });
+
+        // Generate a filename if not provided
+        const filename = title ? `${title}.mp4` : `youtube_${Date.now()}.mp4`;
+
+        // Save to MongoDB GridFS
+        const db = mongoose.connection.db as Db;
+        const bucket = new GridFSBucket(db, {
+            bucketName: 'videos'
+        });
+
+        const uploadStream = bucket.openUploadStream(filename, {
+            metadata: {
+                contentType: 'video/mp4',
+                uploadDate: new Date(),
+                source: 'youtube',
+                originalUrl: url,
+                quality,
+                description
+            }
+        });
+
+        // Write the video to GridFS
+        uploadStream.end(Buffer.from(downloadResponse.data));
+
+        // Wait for upload to complete
+        await new Promise<void>((resolve, reject) => {
+            uploadStream.on('finish', () => resolve());
+            uploadStream.on('error', reject);
+        });
+
+        // Get the video file info
+        const videoFile = await bucket.find({ _id: uploadStream.id }).next();
+        if (!videoFile) {
+            throw new Error('Failed to retrieve video file after upload');
+        }
+
+        // Return success response with URLs
+        res.status(201).json({
+            id: videoFile._id.toString(),
+            filename: videoFile.filename,
+            contentType: videoFile.metadata?.contentType,
+            uploadDate: videoFile.metadata?.uploadDate,
+            size: videoFile.length,
+            urls: {
+                download: `/api/videos/${videoFile._id}`,
+                stream: `/api/videos/${videoFile._id}/stream`
+            }
+        });
+
+    } catch (error) {
+        console.error('YouTube download error:', error);
+        if (axios.isAxiosError(error) && error.response) {
+            // If the error came from ffmpeg-server, include its error details
+            res.status(error.response.status).json({
+                error: 'Failed to download YouTube video',
+                details: error.response.data
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to download YouTube video',
+                details: error instanceof Error ? error.message : 'Unknown error'
+            });
+        }
+    }
+});
+
 export default router; 

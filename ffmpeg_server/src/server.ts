@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { healthRouter, conversionsRouter } from './routes';
+import { healthRouter, conversionsRouter, youtubeRouter } from './routes';
 
 // Load environment variables
 dotenv.config();
@@ -16,6 +16,7 @@ app.use(express.json());
 // Register routes
 app.use('/', healthRouter);
 app.use('/', conversionsRouter);
+app.use('/youtube', youtubeRouter);
 
 app.listen(PORT, HOST, () => {
     console.log(`Server running on http://${HOST}:${PORT}`);
