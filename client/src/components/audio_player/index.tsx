@@ -19,7 +19,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioId, speed = 1.0 }
 
     useEffect(() => {
         if (audioId && audioRef.current) {
-            audioRef.current.src = `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.APP}/audio/stream/${audioId}?speed=${speed}`;
+            audioRef.current.src = `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.AUDIO}/stream/${audioId}?speed=${speed}`;
             audioRef.current.load();
         }
     }, [audioId, speed]);
@@ -29,7 +29,9 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioId, speed = 1.0 }
             if (isPlaying) {
                 audioRef.current.pause();
             } else {
-                audioRef.current.play();
+                audioRef.current.play().catch(error => {
+                    console.error('Error playing audio:', error);
+                });
             }
             setIsPlaying(!isPlaying);
         }
@@ -77,6 +79,7 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ audioId, speed = 1.0 }
                         onTimeUpdate={handleTimeUpdate}
                         onLoadedMetadata={handleLoadedMetadata}
                         onEnded={() => setIsPlaying(false)}
+                        onError={(e) => console.error('Audio error:', e)}
                         style={{ display: 'none' }}
                     />
                 </>

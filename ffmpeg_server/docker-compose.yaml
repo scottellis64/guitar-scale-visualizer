@@ -26,5 +26,5 @@ services:
       context: .
       dockerfile: yt-dlp.Dockerfile
     volumes:
-      - './data/youtube:/app/data/youtube'
+      - './data/downloads:/app/data/downloads'
     restart: unless-stopped

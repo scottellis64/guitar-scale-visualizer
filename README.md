@@ -141,3 +141,53 @@ yarn test
 Today, that gets you one passing and 3 failing tests.  Testing is often a developer's last priority, including that of yours truly.
 
 Stay tuned!
+
+## Future direction and research
+
+### Microservices architecture
+
+At some point in the near future, all of this will be deployed to the cloud and assigned to a 
+domain.  For now I am still iterating over all the POCs to provide a minimum viable product.
+
+This will be deployed on AWS and to my way of thinking today this will involve combining AWS with
+Docker in a microservices architecture/layout.  
+
+We have clear delineations of functionality, but only a few at the start.  However, thinking ahead,
+this can be a pluggable suite of products and services.  Currently these services are implemented or are in the works:
+
+- Client - the web application 
+- server - generic name that will change once there are a variety of services.  The server is a rest api that uses MongoDB.  Mongo so far has collections for:
+   * users
+   * saved videos from youtube and facebook
+Mongo will have in the future:
+   * all application state such as
+      - learning pages for lack of a better term.  Learning pages are essentially like evernote notes, which can contain any combination of widgets, videos and audio recordings, tablatures, etc.  
+      - Folders to organize resources into a hierarchy
+      - Tags - tags can be applied to any entity
+         * examples - genre:bluegress, riff:key-of-g,starts-on-1,ends-on-5,all-major,major-blues,all-pentatonic
+- ffmpeg_server - this server provides media conversion services.  
+   * this server is standalone and doesn't have a database or any other connected services
+   * on this is installed a simple rest api that other services call call to perform conversions and media acquisition from various online sites such as youtube, facebook and many others that aren't implemented yet.  
+
+In the future, another service to provide is one for audio stem separation
+
+Services can be added and rendered in the UI. 
+
+That's the rough plan anyway.
+
+This plays nicely with the concept of a microservices architecture.  Instead of having one backend service that grows over time with more and more dependencies that can potentially conflict with one another, have several individual services makes sense.  Adding more has no impact on the others.
+
+To make this all happen requires a technology stack that provides features such as:
+- service discovery
+- logging
+- load balancing
+- health monitoring
+
+There are others. 
+
+How best to do this?  That's the question.  So here are some links to start researching:
+- [Hydra](https://blog.risingstack.com/deploying-node-js-microservices-to-aws-using-docker/) This article advocates for using Hydra, which appears to provide for everything needed to deploy NodeJS microservices.  Is it overkill?  
+- [Here](https://thelinuxcode.com/how-to-build-a-serverless-node-js-microservice-on-aws-lambda/) is an article on how to use AWS Lambdas, which talks about an API Gateway that handles service discovery.  It also pushes DynamoDB.  Maybe this can replace Mongo, not sure.  But [here](https://www.mongodb.com/developer/products/atlas/serverless-development-lambda-atlas/) is an article that details how to use Mongo with AWS Lambda.
+- [Another](https://medium.com/@randika/serverless-microservices-with-node-js-and-aws-lambda-build-deploy-34a8c3d80e41xx) AWS Lambda/DynamoDB how to
+- No AWS, but all about Node [microservices](https://dev.to/abeinevincent/how-to-build-deploy-scalable-microservices-with-nodejs-typescript-and-docker-a-comprehesive-guide-2bcc)
+      

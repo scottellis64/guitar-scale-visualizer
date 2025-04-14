@@ -13,7 +13,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ videoId }) => {
 
     useEffect(() => {
         if (videoId && videoRef.current) {
-            const videoUrl = `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.APP}/videos/${videoId}`;
+            const videoUrl = `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.VIDEOS}/videos/${videoId}`;
             videoRef.current.src = videoUrl;
             videoRef.current.load();
         }

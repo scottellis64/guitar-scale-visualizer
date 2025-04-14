@@ -1,11 +1,14 @@
+// Load environment variables first
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load environment variables from the server directory
+dotenv.config({ path: path.resolve(__dirname, '../.env') });
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
 import { appRouter, facebookRouter, audioRouter, userRouter, videoRouter } from './routes';
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -23,13 +26,13 @@ app.use('/api/users', userRouter);
 app.use('/api/videos', videoRouter);
 
 // Error handling middleware
-app.use((err: Error, req: express.Request, res: express.Response, next: express.NextFunction) => {
+app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
 // Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://sellis:sellis@localhost:27017/guitar-app';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/guitar-app';
 
 mongoose.connect(MONGODB_URI)
     .then(() => {
