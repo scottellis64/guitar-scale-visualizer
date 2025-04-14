@@ -1,9 +1,4 @@
 // Environment configuration
-const ENV = {
-  API_BASE_URL: 'http://localhost:3001',
-  FFMPEG_BASE_URL: 'http://localhost:8080'
-};
-
 export const API_CONFIG = {
   // Main server API
   SERVER: {

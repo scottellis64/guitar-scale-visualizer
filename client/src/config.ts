@@ -8,7 +8,11 @@ export const API_CONFIG = {
     ENDPOINTS: {
       API: '/api',
       APP: '/api/app',
-      FACEBOOK: '/api/fb'
+      FACEBOOK: '/api/fb',
+      YOUTUBE: '/api/videos/youtube',
+      REELS: '/api/reels',
+      AUDIO: '/api/audio',
+      VIDEOS: '/api/videos'
     }
   },
   
@@ -17,7 +21,9 @@ export const API_CONFIG = {
     BASE_URL: ffmpegBaseUrl || 'http://localhost:8080',
     ENDPOINTS: {
       HEALTH: '/ping',
-      CONVERSIONS: '/convert'
+      CONVERSIONS: '/convert',
+      YOUTUBE: '/youtube/download',
+      FACEBOOK: '/facebook/download'
     }
   }
 } as const;

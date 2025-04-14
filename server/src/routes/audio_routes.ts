@@ -9,7 +9,7 @@ const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
 
 // Get audio file information
-router.get('/audio/info/:id', async (req: Request, res: Response) => {
+router.get('/info/:id', async (req: Request, res: Response) => {
     try {
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });
@@ -41,7 +41,7 @@ router.get('/audio/info/:id', async (req: Request, res: Response) => {
 });
 
 // Get audio content directly
-router.get('/audio/:id', async (req: Request, res: Response) => {
+router.get('/:id', async (req: Request, res: Response) => {
     try {
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });
@@ -74,7 +74,7 @@ router.get('/audio/:id', async (req: Request, res: Response) => {
 });
 
 // Stream audio with speed control
-router.get('/audio/stream/:id', async (req: Request, res: Response) => {
+router.get('/stream/:id', async (req: Request, res: Response) => {
     try {
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });
@@ -121,7 +121,7 @@ router.get('/audio/stream/:id', async (req: Request, res: Response) => {
 });
 
 // List all audio files
-router.get('/audio', async (_req: Request, res: Response) => {
+router.get('/', async (_req: Request, res: Response) => {
     try {
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });
@@ -151,7 +151,7 @@ router.get('/audio', async (_req: Request, res: Response) => {
 });
 
 // Upload audio file
-router.post('/audio', (req: any, res: any) => {
+router.post('/', (req: any, res: any) => {
     const uploadMiddleware = upload.single('file');
     
     uploadMiddleware(req as any, res as any, async (err: any) => {
@@ -223,7 +223,7 @@ router.post('/audio', (req: any, res: any) => {
 });
 
 // Delete audio
-router.delete('/audio/:id', async (req: Request, res: Response) => {
+router.delete('/:id', async (req: Request, res: Response) => {
     try {
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });

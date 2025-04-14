@@ -13,7 +13,7 @@ export const useAudioApi = () => {
       setError(null);
 
       const response = await fetch(
-        `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.APP}/audio`
+        `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.AUDIO}/`
       );
 
       if (!response.ok) {

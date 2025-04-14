@@ -1,160 +1,118 @@
-import { Router } from 'express';
+import { Router, Request, Response } from 'express';
 import axios from 'axios';
-import { FacebookReel, DownloadReelRequest } from '../types/facebook';
+import { DownloadedReel } from '../models/DownloadedReel';
+import mongoose from 'mongoose';
+import { GridFSBucket } from 'mongodb';
+import { Db } from 'mongodb';
 
 const router = Router();
 
-// Facebook API Configuration
-const FB_APP_ID = process.env.FB_APP_ID;
-const FB_APP_SECRET = process.env.FB_APP_SECRET;
-const FB_REDIRECT_URI = process.env.FB_REDIRECT_URI || 'http://localhost:3001/auth/facebook/callback';
-const FB_API_URL = 'https://graph.facebook.com/v18.0';
+// Initialize GridFS bucket
+const conn = mongoose.connection;
+let gfsBucket: GridFSBucket;
 
-// In-memory storage for access tokens (replace with database in production)
-let userAccessTokens: { [key: string]: string } = {};
-
-// In-memory storage for reels (replace with database in production)
-let reels: FacebookReel[] = [];
-
-// Middleware to check Facebook authentication
-const checkFacebookAuth = async (req: any, res: any, next: any) => {
-    const userId = req.headers['x-facebook-user-id'] as string;
-    const accessToken = userAccessTokens[userId];
-
-    if (!accessToken) {
-        return res.status(401).json({ error: 'Facebook authentication required' });
+conn.once('open', () => {
+    if (!conn.db) {
+        throw new Error('Database connection not established');
     }
+    gfsBucket = new GridFSBucket(conn.db, {
+        bucketName: 'reels'
+    });
+});
 
-    // Verify token is still valid
+router.post('/download', async (req: Request, res: Response) => {
     try {
-        await axios.get(`${FB_API_URL}/me`, {
-            params: { access_token: accessToken }
-        });
-        next();
-    } catch (error) {
-        delete userAccessTokens[userId];
-        res.status(401).json({ error: 'Invalid or expired Facebook token' });
-    }
-};
-
-router.get('/reels', checkFacebookAuth, async (req, res) => {
-    try {
-        const { downloaded, sortBy = 'createdAt', order = 'desc' } = req.query;
-        const userId = req.headers['x-facebook-user-id'] as string;
-        console.log('Fetching reels for user:', userId);
+        const { url, title } = req.body;
         
-        const accessToken = userAccessTokens[userId];
-        if (!accessToken) {
-            console.error('No access token found for user:', userId);
-            return res.status(401).json({ error: 'Facebook authentication required' });
+        if (!url) {
+            return res.status(400).json({ error: 'URL is required' });
         }
 
-        // Fetch reels from Facebook Graph API
-        console.log('Making request to Facebook Graph API...');
-        const response = await axios.get(`${FB_API_URL}/me/videos`, {
-            params: {
-                access_token: accessToken,
-                fields: 'id,title,created_time,permalink_url,source',
-                limit: 50
+        if (!mongoose.connection.readyState) {
+            return res.status(503).json({ error: 'Database not ready' });
+        }
+
+        const ffmpegServerUrl = process.env.FFMPEG_SERVER_URL || 'http://localhost:8080';
+        
+        // Call ffmpeg server to download the reel
+        const downloadResponse = await axios.post(`${ffmpegServerUrl}/facebook/download`, {
+            url
+        }, {
+            responseType: 'arraybuffer'
+        });
+
+        // Generate a filename if not provided
+        const filename = title ? `${title}.mp4` : `facebook_${Date.now()}.mp4`;
+
+        // Save to MongoDB GridFS
+        const db = mongoose.connection.db as Db;
+        const bucket = new GridFSBucket(db, {
+            bucketName: 'reels'
+        });
+
+        const uploadStream = bucket.openUploadStream(filename, {
+            metadata: {
+                contentType: 'video/mp4',
+                uploadDate: new Date(),
+                source: 'facebook',
+                originalUrl: url,
+                title: title || 'Untitled Reel'
             }
         });
 
-        console.log('Successfully fetched videos from Facebook');
-        let reels: FacebookReel[] = response.data.data.map((video: any) => ({
-            id: video.id,
-            title: video.title || 'Untitled Reel',
-            url: video.permalink_url,
-            downloaded: false,
-            createdAt: video.created_time
-        }));
-        
-        console.log(`Found ${reels.length} reels`);
-        
-        // Filter by download status if specified
-        if (downloaded !== undefined) {
-            reels = reels.filter(reel => 
-                reel.downloaded === (downloaded === 'true')
-            );
+        // Write the video to GridFS
+        uploadStream.end(Buffer.from(downloadResponse.data));
+
+        // Wait for upload to complete
+        await new Promise<void>((resolve, reject) => {
+            uploadStream.on('finish', () => resolve());
+            uploadStream.on('error', reject);
+        });
+
+        // Get the video file info
+        const videoFile = await bucket.find({ _id: uploadStream.id }).next();
+        if (!videoFile) {
+            throw new Error('Failed to retrieve video file after upload');
         }
-        
-        // Sort reels
-        const sortableFields: (keyof FacebookReel)[] = ['id', 'title', 'createdAt'];
-        if (sortableFields.includes(sortBy as keyof FacebookReel)) {
-            reels.sort((a, b) => {
-                const aValue = a[sortBy as keyof FacebookReel];
-                const bValue = b[sortBy as keyof FacebookReel];
-                
-                if (order === 'desc') {
-                    return String(bValue).localeCompare(String(aValue));
-                }
-                return String(aValue).localeCompare(String(bValue));
+
+        // Save to MongoDB
+        const downloadedReel = new DownloadedReel({
+            title: title || 'Untitled Reel',
+            originalUrl: url,
+            filename,
+            path: `reels/${videoFile._id}`,
+            gridfsId: uploadStream.id
+        });
+
+        await downloadedReel.save();
+
+        // Return success response with URLs
+        res.status(201).json({
+            id: videoFile._id.toString(),
+            filename: videoFile.filename,
+            contentType: videoFile.metadata?.contentType,
+            uploadDate: videoFile.metadata?.uploadDate,
+            size: videoFile.length,
+            urls: {
+                download: `/api/reels/${videoFile._id}`,
+                stream: `/api/reels/${videoFile._id}/stream`
+            }
+        });
+
+    } catch (error) {
+        console.error('Error downloading Facebook reel:', error);
+        if (axios.isAxiosError(error) && error.response) {
+            // If the error came from ffmpeg-server, include its error details
+            res.status(error.response.status).json({
+                error: 'Failed to download Facebook reel',
+                details: error.response.data
+            });
+        } else {
+            res.status(500).json({
+                error: 'Failed to download Facebook reel',
+                details: error instanceof Error ? error.message : 'Unknown error'
             });
         }
-        
-        res.json({ data: reels });
-    } catch (error) {
-        console.error('Error fetching Facebook reels:', error);
-        res.status(500).json({ error: 'Failed to fetch reels from Facebook' });
-    }
-});
-
-router.post('/reels/download', async (req, res) => {
-    try {
-        const { url, title }: DownloadReelRequest = req.body;
-        
-        // TODO: Implement actual download logic using a library like ytdl-core
-        // For now, we'll just create a mock reel
-        const newReel: FacebookReel = {
-            id: Date.now().toString(),
-            title: title || 'Untitled Reel',
-            url,
-            downloaded: false,
-            createdAt: new Date().toISOString()
-        };
-
-        reels.push(newReel);
-        res.json({ data: newReel });
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to download reel' });
-    }
-});
-
-router.get('/auth', (_req, res) => {
-    console.log('Starting Facebook login flow...');
-    const authUrl = `https://www.facebook.com/v18.0/dialog/oauth?client_id=${FB_APP_ID}&redirect_uri=${FB_REDIRECT_URI}&scope=user_videos`;
-    res.redirect(authUrl);
-});
-
-router.get('/auth/callback', async (req, res) => {
-    try {
-        const { code } = req.query;
-        console.log('Received Facebook callback with code:', code);
-        
-        if (!code) {
-            return res.status(400).json({ error: 'Authorization code not provided' });
-        }
-
-        // Exchange code for access token
-        const tokenResponse = await axios.get('https://graph.facebook.com/v18.0/oauth/access_token', {
-            params: {
-                client_id: FB_APP_ID,
-                client_secret: FB_APP_SECRET,
-                redirect_uri: FB_REDIRECT_URI,
-                code
-            }
-        });
-
-        const { access_token, user_id } = tokenResponse.data;
-        console.log('Successfully obtained access token for user:', user_id);
-        
-        // Store the access token (in production, use a database)
-        userAccessTokens[user_id] = access_token;
-
-        // Redirect to frontend with success message and user ID
-        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}?auth=success&userId=${user_id}`);
-    } catch (error) {
-        console.error('Facebook auth error:', error);
-        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:3000'}?auth=error`);
     }
 });
 

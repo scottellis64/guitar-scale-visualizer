@@ -1,34 +1,74 @@
 # Use root/example as user/password credentials
-version: '3.1'
+version: '3.8'
 
 services:
-
-  mongo:
-    image: mongo
-    restart: always
-    command: mongod --auth
-    container_name: mongo
+  # MongoDB Service
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
     ports:
-      - '27017-27019:27017-27019'
-    environment:
-      - MONGO_INITDB_DATABASE=guitar-app
-      - MONGO_INITDB_ROOT_USERNAME=admin
-      - MONGO_INITDB_ROOT_PASSWORD=root
+      - "27017:27017"
     volumes:
-      - mongodbdata:/data/db
-      - ./docker_data/init-mongo.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
-
-  mongo-express:
-    image: mongo-express
-    restart: always
-    ports:
-      - 8081:8081
+      - mongodb_data:/data/db
     environment:
-      ME_CONFIG_MONGODB_ADMINUSERNAME: admin
-      ME_CONFIG_MONGODB_ADMINPASSWORD: root
-      ME_CONFIG_MONGODB_URL: mongodb://admin:root@mongo:27017/
-      ME_CONFIG_BASICAUTH: false
+      - MONGO_INITDB_ROOT_USERNAME=root
+      - MONGO_INITDB_ROOT_PASSWORD=example
+    networks:
+      - app-network
+
+  # Main Server Service
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: server
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./server:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://root:example@mongodb:27017
+      - SERVICE_NAME=server
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+  # FFmpeg Server Service
+  ffmpeg_server:
+    build:
+      context: ./ffmpeg_server
+      dockerfile: Dockerfile
+    container_name: ffmpeg_server
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./ffmpeg_server:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://root:example@mongodb:27017
+      - SERVICE_NAME=ffmpeg_server
+    depends_on:
+      - mongodb
+    networks:
+      - app-network
+
+  # Service Discovery (Consul for local development)
+  consul:
+    image: consul:latest
+    container_name: consul
+    ports:
+      - "8500:8500"
+    command: agent -server -bootstrap -ui -client=0.0.0.0
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge
 
 volumes:
-  mongodbdata:
-    driver: local
+  mongodb_data:

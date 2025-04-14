@@ -13,7 +13,7 @@ export const useVideoApi = () => {
       setError(null);
 
       const response = await fetch(
-        `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.APP}/videos`
+        `${API_CONFIG.SERVER.BASE_URL}${API_CONFIG.SERVER.ENDPOINTS.VIDEOS}/videos`
       );
 
       if (!response.ok) {
