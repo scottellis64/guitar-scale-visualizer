@@ -203,8 +203,10 @@ router.post('/videos/:id/convert', async (req: Request, res: Response) => {
             contentType: videoFile.contentType
         });
 
+        const ffmpegServerUrl = `http://${process.env.FFMPEG_HOST}:${process.env.FFMPEG_PORT}`;
+
         // Call ffmpeg server for conversion
-        const ffmpegResponse = await axios.post('http://localhost:8080/convert', formData, {
+        const ffmpegResponse = await axios.post(`${ffmpegServerUrl}/convert`, formData, {
             headers: formData.getHeaders(),
             responseType: 'arraybuffer'
         });
@@ -333,8 +335,10 @@ router.post('/youtube', async (req: Request, res: Response) => {
             return res.status(503).json({ error: 'Database not ready' });
         }
 
+        const ffmpegServerUrl = `http://${process.env.FFMPEG_HOST}:${process.env.FFMPEG_PORT}`;
+
         // Download video from ffmpeg-server
-        const downloadResponse = await axios.post(`${process.env.FFMPEG_SERVER_URL}/youtube/download`, {
+        const downloadResponse = await axios.post(`${ffmpegServerUrl}/youtube/download`, {
             url,
             quality
         }, {

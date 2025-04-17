@@ -1,10 +1,12 @@
 // Load environment variables
 const apiBaseUrl = import.meta.env.VITE_API_BASE_URL
 const ffmpegBaseUrl = import.meta.env.VITE_FFMPEG_BASE_URL
+const consulHost = import.meta.env.VITE_CONSUL_HOST
+const consulPort = import.meta.env.VITE_CONSUL_PORT
 
 export const API_CONFIG = {
   SERVER: {
-    BASE_URL: apiBaseUrl || 'http://localhost:3001',
+    BASE_URL: apiBaseUrl || `http://${consulHost}:${consulPort}`,
     ENDPOINTS: {
       API: '/api',
       APP: '/api/app',
@@ -18,7 +20,7 @@ export const API_CONFIG = {
   
   // FFmpeg server API
   FFMPEG: {
-    BASE_URL: ffmpegBaseUrl || 'http://localhost:8080',
+    BASE_URL: ffmpegBaseUrl || `http://${consulHost}:${consulPort}`,
     ENDPOINTS: {
       HEALTH: '/ping',
       CONVERSIONS: '/convert',

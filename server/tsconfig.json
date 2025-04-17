@@ -11,6 +11,8 @@
     "moduleResolution": "node",
     "resolveJsonModule": true,
     "baseUrl": ".",
+    "sourceMap": true,
+    "inlineSources": true,
     "paths": {
       "@models/*": ["src/models/*"],
       "@routes/*": ["src/routes/*"],

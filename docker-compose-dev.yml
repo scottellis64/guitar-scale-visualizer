@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+      - "9229:9229"  # Node.js debug port
+    environment:
+      - DEBUG_MODE=true
+    volumes:
+      - ./server:/app
+      - ./.env.development:/app/.env
+
+  ffmpeg_server:
+    build:
+      context: ./ffmpeg_server
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3001:3001"
+      - "9230:9229"  # Node.js debug port
+    environment:
+      - DEBUG_MODE=true
+    volumes:
+      - ./ffmpeg_server:/app
+      - ./.env.development:/app/.env
+
+  client:
+    build:
+      context: .
+      dockerfile: ./client/Dockerfile
+      target: development
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./client:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development

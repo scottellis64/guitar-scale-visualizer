@@ -1,17 +1,19 @@
 // Load environment variables first
 import dotenv from 'dotenv';
-import path from 'path';
-
-// Load environment variables from the server directory
-dotenv.config({ path: path.resolve(__dirname, '../.env') });
 
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
+
 import { appRouter, facebookRouter, audioRouter, userRouter, videoRouter } from './routes';
+import { registerService } from './utils/consul';
+
+// Load environment variables
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3001;
+const PORT = Number(process.env.SERVER_PORT) || 3000;
+const HOST = process.env.SERVER_HOST || '0.0.0.0';
 
 // Middleware
 app.use(cors());
@@ -25,27 +27,56 @@ app.use('/api/audio', audioRouter);
 app.use('/api/users', userRouter);
 app.use('/api/videos', videoRouter);
 
+// Health check endpoint
+app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok' });
+});
+
 // Error handling middleware
 app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// Connect to MongoDB
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/guitar-app';
+const mongoURL = process.env.MONGODB_URL;
+console.log(mongoURL);
+if (! mongoURL) {
+    throw new Error("MONGODB_URL environment variable is not defined");
+}
 
-mongoose.connect(MONGODB_URI)
-    .then(() => {
-        console.log('Connected to MongoDB');
-        // Start server
-        app.listen(PORT, () => {
+// Configure mongoose options
+mongoose.set('strictQuery', true);
+
+// Connect to MongoDB
+const connectWithRetry = async () => {
+    try {
+        await mongoose.connect(mongoURL, {
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
+        });
+        console.log('Connected to MongoDB successfully');
+        
+        // Register with Consul
+        await registerService({
+            name: 'server',
+            port: PORT,
+            address: HOST,
+            tags: ['api', 'rest'],
+        });
+        
+        // Start server only after successful MongoDB connection
+        app.listen(PORT, HOST, () => {
             console.log(`Server is running on port ${PORT}`);
         });
-    })
-    .catch((error) => {
+    } catch (error) {
         console.error('MongoDB connection error:', error);
-        process.exit(1);
-    });
+        console.log('Retrying connection in 5 seconds...');
+        setTimeout(connectWithRetry, 5000);
+    }
+};
+
+// Initial connection attempt
+connectWithRetry();
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {

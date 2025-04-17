@@ -1609,6 +1609,13 @@
   dependencies:
     "@babel/types" "^7.20.7"
 
+"@types/consul@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@types/consul/-/consul-2.0.0.tgz#f931a968d480234236435c9294ab1ac4aaeb11fc"
+  integrity sha512-IyvUaJNOrU+X/Zh46/zwwUPHOEULuC4zod8KNUDElBqN8d9XwtPdyvEeHBZ/HPmkWN9EqR4KbfnzQuRLlWt9+Q==
+  dependencies:
+    consul "*"
+
 "@types/doctrine@^0.0.9":
   version "0.0.9"
   resolved "https://registry.yarnpkg.com/@types/doctrine/-/doctrine-0.0.9.tgz#d86a5f452a15e3e3113b99e39616a9baa0f9863f"
@@ -2364,6 +2371,14 @@ confbox@^0.1.8:
   version "0.1.8"
   resolved "https://registry.yarnpkg.com/confbox/-/confbox-0.1.8.tgz#820d73d3b3c82d9bd910652c5d4d599ef8ff8b06"
   integrity sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==
+
+consul@*, consul@^2.0.1:
+  version "2.0.1"
+  resolved "https://registry.yarnpkg.com/consul/-/consul-2.0.1.tgz#414a1a89807c0b8ad7f07a7471c9b794988536fa"
+  integrity sha512-91ExUUelOJ1yyB0etYAR0w1p6Ues1VosEyBVxPcWJdnQDTKqAEFzL0MHfOqZWYI2d4HZ4FgotHZkAPW2A/xahA==
+  dependencies:
+    papi "^1.1.0"
+    uuid "^10.0.0"
 
 convert-source-map@^1.5.0:
   version "1.9.0"
@@ -4010,6 +4025,11 @@ package-json-from-dist@^1.0.0:
   resolved "https://registry.yarnpkg.com/package-json-from-dist/-/package-json-from-dist-1.0.1.tgz#4f1471a010827a86f94cfd9b0727e36d267de505"
   integrity sha512-UEZIS3/by4OC8vL3P2dTXRETpebLI2NiI5vIrjaD/5UtrkFX/tNbwjTSRAGC/+7CAo2pIcBaRgWmcBBHcsaCIw==
 
+papi@^1.1.0:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/papi/-/papi-1.1.2.tgz#5b1d7686834bec489f1f823103c5e8554f2b984f"
+  integrity sha512-cwM6pPpfAYgPe3EQi23SmB5J5s4XFS9lou9z63I5BbnMGmFaR8LAKvKboW7n1IUAKj76OtnyK0YU16JjnZrqVg==
+
 parent-module@^1.0.0:
   version "1.0.1"
   resolved "https://registry.yarnpkg.com/parent-module/-/parent-module-1.0.1.tgz#691d2709e78c79fae3a156622452d00762caaaa2"
@@ -4967,6 +4987,11 @@ util@^0.12.5:
     is-generator-function "^1.0.7"
     is-typed-array "^1.1.3"
     which-typed-array "^1.1.2"
+
+uuid@^10.0.0:
+  version "10.0.0"
+  resolved "https://registry.yarnpkg.com/uuid/-/uuid-10.0.0.tgz#5a95aa454e6e002725c79055fd42aaba30ca6294"
+  integrity sha512-8XkAphELsDnEGrDxUOHB3RGvXz6TeuYSGEZBOjtTtPm2lwhGBjLgOzLHB63IUWfBpNucQjND6d3AOudO+H3RWQ==
 
 uuid@^9.0.0:
   version "9.0.1"
