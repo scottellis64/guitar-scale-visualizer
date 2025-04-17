@@ -34,11 +34,20 @@ router.post('/convert', (req: CustomRequest, res: Response) => {
             }
 
             // Create temporary file paths
-            const tempInputPath = `/tmp/${Date.now()}_input.mp4`;
-            const tempOutputPath = `/tmp/${Date.now()}_output.mp3`;
+            const tempInputPath = `/app/data/tmp/${Date.now()}_input.mp4`;
+            const tempOutputPath = `/app/data/tmp/${Date.now()}_output.mp3`;
+
+            // Ensure the directory exists
+            await fs.mkdir('/app/data/tmp', { recursive: true });
 
             // Write input file
             await fs.writeFile(tempInputPath, req.file.buffer);
+
+            // Verify the file was written correctly
+            const stats = await fs.stat(tempInputPath);
+            if (stats.size === 0) {
+                throw new Error('Input file is empty');
+            }
 
             // Set response headers
             res.set('Content-Type', 'audio/mpeg');
@@ -60,6 +69,12 @@ router.post('/convert', (req: CustomRequest, res: Response) => {
                 .on('end', async () => {
                     console.log('FFmpeg processing finished');
                     try {
+                        // Verify output file exists and has content
+                        const outputStats = await fs.stat(tempOutputPath);
+                        if (outputStats.size === 0) {
+                            throw new Error('Output file is empty');
+                        }
+
                         // Read and stream the output file
                         const outputBuffer = await fs.readFile(tempOutputPath);
                         res.send(outputBuffer);

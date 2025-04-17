@@ -7,6 +7,37 @@ import crypto from 'crypto';
 const execAsync = promisify(exec);
 const router = Router();
 
+// Get metadata for a Facebook reel
+router.get('/metadata', async (req, res) => {
+    try {
+        const { url } = req.query;
+        
+        if (!url) {
+            return res.status(400).json({ error: 'URL is required' });
+        }
+
+        const command = `yt-dlp --dump-json --no-download "${url}"`;
+        const { stdout } = await execAsync(command);
+        const metadata = JSON.parse(stdout);
+        
+        res.json({
+            title: metadata.title || 'Untitled Reel',
+            uploader: metadata.uploader || 'Unknown',
+            description: metadata.description || '',
+            duration: metadata.duration || 0,
+            viewCount: metadata.view_count || 0,
+            uploadDate: metadata.upload_date ? new Date(metadata.upload_date) : new Date(),
+            thumbnail: metadata.thumbnail || ''
+        });
+    } catch (error) {
+        console.error('Error getting reel metadata:', error);
+        res.status(500).json({ 
+            error: 'Failed to get reel metadata',
+            details: error instanceof Error ? error.message : String(error)
+        });
+    }
+});
+
 router.post('/download', async (req, res) => {
     try {
         const { url } = req.body;
@@ -21,10 +52,12 @@ router.post('/download', async (req, res) => {
         const randomString = crypto.randomBytes(4).toString('hex');
         const reelDownloadFile = `reel_${timestamp}_${randomString}.mp4`;
         const reelDownloadFileWithPath = `${downloadsDir}/${reelDownloadFile}`;
-        const downloadOptions = `-f "worst[ext=mp4]" --merge-output-format mp4 --no-playlist --no-warnings -o "` + reelDownloadFileWithPath + `"`;
         
-        // Execute yt-dlp command to download the Facebook Reel with specific format options
-        const command = `docker exec yt-dlp yt-dlp ${downloadOptions} "${url}"`;
+        // Updated command without cookies option
+        const downloadOptions = `-f "best[ext=mp4]/best[ext=webm]/best" --merge-output-format mp4 --no-playlist --no-warnings --extractor-args "facebook:skip_dash_manifest" --add-header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -o "` + reelDownloadFileWithPath + `"`;
+        
+        // Execute yt-dlp command directly
+        const command = `yt-dlp ${downloadOptions} "${url}"`;
 
         try {
             await execAsync(command);

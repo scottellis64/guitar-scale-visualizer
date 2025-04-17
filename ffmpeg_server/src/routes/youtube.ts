@@ -8,9 +8,9 @@ const router = Router();
 
 // Quality presets for different video sizes
 const QUALITY_PRESETS = {
-    'low': 'worst[ext=mp4]',
-    'medium': 'best[height<=720][ext=mp4]',
-    'high': 'best[height<=1080][ext=mp4]',
+    'low': 'worstvideo[ext=mp4]+worstaudio[ext=m4a]/worst[ext=mp4]/worst',
+    'medium': 'bestvideo[height<=720][ext=mp4]+bestaudio[ext=m4a]/best[height<=720][ext=mp4]/best[height<=720]',
+    'high': 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]',
     'best': 'bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best'
 } as const;
 
@@ -36,10 +36,23 @@ router.post('/download', async (req: Request, res: Response) => {
         const tempFilename = `video_${Date.now()}.mp4`;
         const outputPath = `/app/data/youtube/${tempFilename}`;
 
+        // Ensure the directory exists
+        await fs.mkdir('/app/data/youtube', { recursive: true });
+
         try {
-            // Execute yt-dlp command in the container with selected quality
+            // Execute yt-dlp command with additional options for better compatibility
             const formatOption = QUALITY_PRESETS[quality as QualityOption];
-            await execAsync(`docker exec yt-dlp yt-dlp -f "${formatOption}" --merge-output-format mp4 --no-playlist -o "${outputPath}" "${url}"`);
+            const command = `yt-dlp \
+                --format "${formatOption}" \
+                --merge-output-format mp4 \
+                --no-playlist \
+                --extractor-args youtube:player_client=android \
+                --extractor-args youtube:player_skip=webpage \
+                --extractor-args youtube:player_url=https://www.youtube.com/s/player \
+                -o "${outputPath}" \
+                "${url}"`;
+
+            await execAsync(command);
         } catch (execError: any) {
             // Clean up any partial download
             try {
@@ -50,7 +63,7 @@ router.post('/download', async (req: Request, res: Response) => {
             
             // Include stderr in the error response
             return res.status(500).json({ 
-                error: 'Failed to download video',
+                error: 'Failed to download video!',
                 details: execError.stderr || execError.message
             });
         }

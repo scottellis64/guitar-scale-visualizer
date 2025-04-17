@@ -1,37 +1,44 @@
 import { Router, Request, Response } from 'express';
 import { Db } from 'mongodb';
 import mongoose from 'mongoose';
-import bcrypt from 'bcrypt';
+import argon2 from 'argon2';
 import jwt from 'jsonwebtoken';
+import { body, validationResult } from 'express-validator';
+import { User } from '../models/User';
+import { authenticateToken } from '../middleware/auth_middleware';
+import { AuthRequest } from '../middleware/auth_middleware';
 
 const router = Router();
 
 // Register new user
-router.post('/register', async (req: Request, res: Response) => {
+router.post('/register', [
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters long')
+], async (req: Request, res: Response) => {
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });
         }
 
         const db = mongoose.connection.db as Db;
-        const { username, email, password } = req.body;
+        const { email, password } = req.body;
 
         // Check if user already exists
-        const existingUser = await db.collection('users').findOne({ 
-            $or: [{ username }, { email }] 
-        });
-
+        const existingUser = await db.collection('users').findOne({ email });
         if (existingUser) {
-            return res.status(400).json({ error: 'Username or email already exists' });
+            return res.status(400).json({ message: 'User already exists' });
         }
 
         // Hash password
-        const salt = await bcrypt.genSalt(10);
-        const hashedPassword = await bcrypt.hash(password, salt);
+        const hashedPassword = await argon2.hash(password);
 
         // Create new user
         const newUser = {
-            username,
             email,
             password: hashedPassword,
             createdAt: new Date(),
@@ -52,19 +59,26 @@ router.post('/register', async (req: Request, res: Response) => {
             token,
             user: {
                 id: result.insertedId,
-                username,
                 email
             }
         });
     } catch (error) {
         console.error('Registration error:', error);
-        res.status(500).json({ error: 'Failed to register user' });
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
 // Login user
-router.post('/login', async (req: Request, res: Response) => {
+router.post('/login', [
+    body('email').isEmail().withMessage('Please enter a valid email'),
+    body('password').exists().withMessage('Password is required')
+], async (req: Request, res: Response) => {
     try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
         if (!mongoose.connection.readyState) {
             return res.status(503).json({ error: 'Database not ready' });
         }
@@ -75,13 +89,13 @@ router.post('/login', async (req: Request, res: Response) => {
         // Find user
         const user = await db.collection('users').findOne({ email });
         if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         // Verify password
-        const validPassword = await bcrypt.compare(password, user.password);
+        const validPassword = await argon2.verify(user.password, password);
         if (!validPassword) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+            return res.status(400).json({ message: 'Invalid credentials' });
         }
 
         // Generate JWT token
@@ -96,13 +110,12 @@ router.post('/login', async (req: Request, res: Response) => {
             token,
             user: {
                 id: user._id,
-                username: user.username,
                 email: user.email
             }
         });
     } catch (error) {
         console.error('Login error:', error);
-        res.status(500).json({ error: 'Failed to login' });
+        res.status(500).json({ message: 'Server error' });
     }
 });
 
@@ -132,7 +145,6 @@ router.get('/profile', async (req: Request, res: Response) => {
         res.json({
             user: {
                 id: user._id,
-                username: user.username,
                 email: user.email,
                 createdAt: user.createdAt,
                 updatedAt: user.updatedAt
@@ -158,7 +170,7 @@ router.put('/profile', async (req: Request, res: Response) => {
 
         const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key') as { userId: string };
         const db = mongoose.connection.db as Db;
-        const { username, email, currentPassword, newPassword } = req.body;
+        const { email, currentPassword, newPassword } = req.body;
 
         const user = await db.collection('users').findOne({ 
             _id: new mongoose.Types.ObjectId(decoded.userId) 
@@ -170,35 +182,27 @@ router.put('/profile', async (req: Request, res: Response) => {
 
         // Verify current password if changing password
         if (newPassword) {
-            const validPassword = await bcrypt.compare(currentPassword, user.password);
+            const validPassword = await argon2.verify(user.password, currentPassword);
             if (!validPassword) {
                 return res.status(401).json({ error: 'Current password is incorrect' });
             }
         }
 
-        // Check if new email or username is already taken
-        if (email !== user.email || username !== user.username) {
-            const existingUser = await db.collection('users').findOne({
-                $or: [
-                    { email, _id: { $ne: user._id } },
-                    { username, _id: { $ne: user._id } }
-                ]
-            });
-
+        // Check if new email is already taken
+        if (email !== user.email) {
+            const existingUser = await db.collection('users').findOne({ email });
             if (existingUser) {
-                return res.status(400).json({ error: 'Username or email already exists' });
+                return res.status(400).json({ error: 'Email already exists' });
             }
         }
 
         const updateData: any = {
-            username: username || user.username,
             email: email || user.email,
             updatedAt: new Date()
         };
 
         if (newPassword) {
-            const salt = await bcrypt.genSalt(10);
-            updateData.password = await bcrypt.hash(newPassword, salt);
+            updateData.password = await argon2.hash(newPassword);
         }
 
         await db.collection('users').updateOne(
@@ -210,7 +214,6 @@ router.put('/profile', async (req: Request, res: Response) => {
             message: 'Profile updated successfully',
             user: {
                 id: user._id,
-                username: updateData.username,
                 email: updateData.email
             }
         });
@@ -243,6 +246,46 @@ router.delete('/profile', async (req: Request, res: Response) => {
     } catch (error) {
         console.error('Delete account error:', error);
         res.status(500).json({ error: 'Failed to delete account' });
+    }
+});
+
+// Change password route
+router.post('/change-password', authenticateToken, [
+    body('currentPassword').exists().withMessage('Current password is required'),
+    body('newPassword').isLength({ min: 6 }).withMessage('New password must be at least 6 characters long')
+], async (req: AuthRequest, res: Response) => {
+    try {
+        const errors = validationResult(req);
+        if (!errors.isEmpty()) {
+            return res.status(400).json({ errors: errors.array() });
+        }
+
+        const { currentPassword, newPassword } = req.body;
+        const userId = req.user?.userId;
+
+        // Find user
+        const user = await User.findById(userId);
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Verify current password
+        const validPassword = await argon2.verify(user.password, currentPassword);
+        if (!validPassword) {
+            return res.status(400).json({ message: 'Current password is incorrect' });
+        }
+
+        // Hash new password
+        const hashedPassword = await argon2.hash(newPassword);
+
+        // Update password
+        user.password = hashedPassword;
+        await user.save();
+
+        res.json({ message: 'Password updated successfully' });
+    } catch (error) {
+        console.error('Password change error:', error);
+        res.status(500).json({ message: 'Server error' });
     }
 });
 

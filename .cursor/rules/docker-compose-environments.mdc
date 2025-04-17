@@ -1,0 +1,17 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+Rule Name: docker-compose-environments.mdc
+Description: 
+The project uses two Docker Compose files:
+- docker-compose.yml: Production environment configuration
+- docker-compose-dev.yml: Development environment configuration
+
+When helping with Docker-related issues:
+1. Always check which environment (production/dev) we're working with
+2. For development debugging, use docker-compose-dev.yml
+3. For production deployment, use docker-compose.yml
+4. The development environment includes additional debugging tools and configurations
+5. The production environment is optimized for performance and security 
