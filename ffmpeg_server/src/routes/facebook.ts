@@ -1,13 +1,53 @@
 import { Router } from 'express';
 import { exec } from 'child_process';
 import { promisify } from 'util';
-import fs from 'fs';
-import crypto from 'crypto';
+import { createFacebookService } from '../factory';
 
 const execAsync = promisify(exec);
 const router = Router();
+const facebookService = createFacebookService();
 
-// Get metadata for a Facebook reel
+/**
+ * @swagger
+ * /api/facebook/metadata:
+ *   get:
+ *     summary: Get metadata for a Facebook reel
+ *     description: Retrieves metadata information for a Facebook reel URL
+ *     parameters:
+ *       - in: query
+ *         name: url
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The Facebook reel URL
+ *     responses:
+ *       200:
+ *         description: Metadata retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 title:
+ *                   type: string
+ *                 uploader:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *                 duration:
+ *                   type: number
+ *                 viewCount:
+ *                   type: number
+ *                 uploadDate:
+ *                   type: string
+ *                   format: date-time
+ *                 thumbnail:
+ *                   type: string
+ *       400:
+ *         description: URL is required
+ *       500:
+ *         description: Server error
+ */
 router.get('/metadata', async (req, res) => {
     try {
         const { url } = req.query;
@@ -38,60 +78,54 @@ router.get('/metadata', async (req, res) => {
     }
 });
 
+/**
+ * @swagger
+ * /api/facebook/download:
+ *   post:
+ *     summary: Download a Facebook video
+ *     description: Downloads a video from Facebook and processes it
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - url
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 description: The Facebook video URL
+ *               title:
+ *                 type: string
+ *                 description: Optional title for the video
+ *               uploader:
+ *                 type: string
+ *                 description: Optional uploader name
+ *     responses:
+ *       200:
+ *         description: Video downloaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 url:
+ *                   type: string
+ *       500:
+ *         description: Server error
+ */
 router.post('/download', async (req, res) => {
     try {
-        const { url } = req.body;
-        
-        if (!url) {
-            return res.status(400).json({ error: 'URL is required' });
-        }
-
-        const downloadsDir = '/app/data/downloads';
-
-        const timestamp = Date.now();
-        const randomString = crypto.randomBytes(4).toString('hex');
-        const reelDownloadFile = `reel_${timestamp}_${randomString}.mp4`;
-        const reelDownloadFileWithPath = `${downloadsDir}/${reelDownloadFile}`;
-        
-        // Updated command without cookies option
-        const downloadOptions = `-f "best[ext=mp4]/best[ext=webm]/best" --merge-output-format mp4 --no-playlist --no-warnings --extractor-args "facebook:skip_dash_manifest" --add-header "User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36" -o "` + reelDownloadFileWithPath + `"`;
-        
-        // Execute yt-dlp command directly
-        const command = `yt-dlp ${downloadOptions} "${url}"`;
-
-        try {
-            await execAsync(command);
-        } catch (execError: any) {
-            // Clean up any partial download
-            try {
-                await fs.promises.unlink(reelDownloadFileWithPath);
-            } catch (unlinkError) {
-                console.error('Error cleaning up partial download:', unlinkError);
-            }
-            
-            // Include stderr in the error response
-            return res.status(500).json({ 
-                error: 'Failed to download video',
-                details: execError.stderr || execError.message
-            });
-        }
-
-        // Read the downloaded file
-        const videoBuffer = await fs.promises.readFile(reelDownloadFileWithPath);
-
-        // Clean up
-        await fs.promises.unlink(reelDownloadFileWithPath);
-
-        // Send the video
-        res.set('Content-Type', 'video/mp4');
-        res.send(videoBuffer);
-
+        const result = await facebookService.downloadVideo(req.body);
+        res.json(result);
     } catch (error) {
-        console.error('Error in Facebook download route:', error);
-        res.status(500).json({ 
-            error: 'Failed to download video',
-            details: error instanceof Error ? error.message : String(error)
-        });
+        console.error('Facebook download error:', error);
+        res.status(500).json({ error: 'Failed to download Facebook video' });
     }
 });
 

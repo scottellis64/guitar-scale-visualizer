@@ -28,13 +28,17 @@ A guitar application with a React client and Express server.
    yarn install-all
    ```
 
-2. Start development servers:
+2. Install LocalStack:
+   - Install the LocalStack extension for Docker Desktop
+   - This provides a web interface at app.localstack.cloud for monitoring AWS services
+
+3. Start development servers:
    ```bash
    yarn dev
    ```
    This will start both the client (Vite) and server (Express) in development mode.
 
-3. Build for production:
+4. Build for production:
    ```bash
    yarn build
    ```
@@ -43,6 +47,8 @@ A guitar application with a React client and Express server.
 
 - Client runs on http://localhost:5173
 - Server runs on http://localhost:3001
+- LocalStack runs on http://localhost:4566 (AWS API endpoints)
+- LocalStack Web UI is available through Docker Desktop extension at app.localstack.cloud
 
 ## API Endpoints
 

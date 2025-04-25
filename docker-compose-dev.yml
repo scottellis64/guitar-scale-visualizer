@@ -1,33 +1,103 @@
 version: '3.8'
 
 services:
+  # Service Discovery (Consul for local development)
+  consul:
+    image: consul:1.15
+    container_name: consul
+    ports:
+      - "${CONSUL_PORT}:${CONSUL_PORT}"
+    command: agent -dev -client=0.0.0.0
+    networks:
+      - app-network
+
+  dynamodb-local:
+    image: amazon/dynamodb-local
+    container_name: dynamodb-local
+    ports:
+      - "${DYNAMODB_PORT}:${DYNAMODB_PORT}"
+    command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
+    volumes:
+      - dynamodb_data:/home/dynamodblocal/data
+    networks:
+      - app-network
+
+  localstack:
+    image: localstack/localstack:latest
+    container_name: localstack
+    ports:
+      - "${LOCALSTACK_PORT}:${LOCALSTACK_PORT}" 
+    environment:
+      - DEBUG=1
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - LAMBDA_EXECUTOR=docker
+      - LAMBDA_REMOTE_DOCKER=false
+      - LAMBDA_DOCKER_NETWORK=cursor_app-network
+      - SERVICES=${LOCALSTACK_SERVICES}
+      - DATA_DIR=${LOCALSTACK_REMOTE_DATA_DIR}
+      - PERSISTENCE=1
+      - INIT_SCRIPTS_PATH=/docker-entrypoint-initaws.d
+      - EDGE_PORT=${LOCALSTACK_PORT}
+      - TMPDIR=/var/lib/localstack/tmp
+    volumes:
+      - "${LOCALSTACK_VOLUME_DIR}:${LOCALSTACK_REMOTE_DATA_DIR}"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+      - "./init-aws.sh:/docker-entrypoint-initaws.d/init-aws.sh"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "${AWS_ENDPOINT}/_localstack/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - app-network
+
   server:
     build:
       context: ./server
       dockerfile: Dockerfile
       target: development
+    env_file:
+      - ./.env.development   
     ports:
-      - "3000:3000"
-      - "9229:9229"  # Node.js debug port
+      - "${SERVER_PORT}:${SERVER_PORT}"
+      - "${SERVER_DEBUG_PORT}:9229"  
     environment:
-      - DEBUG_MODE=true
+      - DYNAMODB_ENDPOINT=${AWS_ENDPOINT}
+      - S3_ENDPOINT=${AWS_ENDPOINT}
+      - SQS_ENDPOINT=${AWS_ENDPOINT}
     volumes:
       - ./server:/app
+      - /app/node_modules
       - ./.env.development:/app/.env
+    depends_on:
+      localstack:
+        condition: service_healthy
+    networks:
+      - app-network
 
   ffmpeg_server:
     build:
       context: ./ffmpeg_server
-      dockerfile: Dockerfile
       target: development
-    ports:
-      - "3001:3001"
-      - "9230:9229"  # Node.js debug port
-    environment:
-      - DEBUG_MODE=true
     volumes:
       - ./ffmpeg_server:/app
-      - ./.env.development:/app/.env
+      - /app/node_modules
+      - ./.env.development:/app/.env:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    env_file:
+      - ./.env.development
+    ports:
+      - "${FFMPEG_PORT}:${FFMPEG_PORT}"
+      - "${FFMPEG_DEBUG_PORT}:9230"
+    command: yarn dev
+    depends_on:
+      localstack:
+        condition: service_healthy
+      consul:
+        condition: service_started
+    networks:
+      - app-network
 
   client:
     build:
@@ -35,9 +105,14 @@ services:
       dockerfile: ./client/Dockerfile
       target: development
     ports:
-      - "5173:5173"
+      - "${CLIENT_PORT}:${CLIENT_PORT}"
     volumes:
       - ./client:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    name: cursor_app-network
+

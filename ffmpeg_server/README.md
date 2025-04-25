@@ -1,6 +1,21 @@
 # Overview
 
-This is a rest api that provides all required services from the [ffmpeg](https://ffmpeg.org/) cli installed on the api server to provide audio and video conversion services.  This is part of the larger guitar-learning application, which is begin developed on an older Mac (2015), upon which ffmpeg is difficult if not impossible to install.  There is no issue using ffmpeg on docker, however, so the strategy is to run a rest api in the ffmpeg docker container that provides all the audio/video conversion services the guitar-learning application requires.
+This is a rest api that provides all required services from the [ffmpeg](https://ffmpeg.org/) cli installed on the api server to provide audio and video conversion services.  This is part of the larger guitar-learning application, which is begin developed on an older Mac (2015), upon which ffmpeg is difficult if not impossible to install.  There is no issue using ffmpeg on docker, however, so the strategy is to run a rest api in the docker container that provides all the audio/video conversion services the guitar-learning application requires.
+
+## API Documentation
+
+### Swagger UI
+The API documentation is available through Swagger UI. Once the server is running, you can access it at:
+
+```
+http://localhost:3001/api-docs
+```
+
+The Swagger UI provides:
+- Interactive API documentation
+- Request/response schemas
+- Example requests
+- Try-it-out functionality
 
 ## Running
 

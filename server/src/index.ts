@@ -1,19 +1,19 @@
 // Load environment variables first
 import dotenv from 'dotenv';
-
 import express from 'express';
-import mongoose from 'mongoose';
 import cors from 'cors';
 
-import { appRouter, facebookRouter, audioRouter, userRouter, videoRouter } from './routes';
-import { registerService } from './utils/consul';
+import { appRouter, facebookRouter, audioRouter, videoRouter } from './routes';
+import { registerService } from './utils';
+import { initializeLocalStack } from './utils/initLocalstack';
+import { config } from './config';
+import { swaggerMiddleware, swaggerUiHandler } from './swagger';
+import { createDynamoDBDocumentClient, createS3Client } from './factory';
 
 // Load environment variables
 dotenv.config();
 
 const app = express();
-const PORT = Number(process.env.SERVER_PORT) || 3000;
-const HOST = process.env.SERVER_HOST || '0.0.0.0';
 
 // Middleware
 app.use(cors());
@@ -21,71 +21,58 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use('/api/app', appRouter);
-app.use('/api/fb', facebookRouter);
+app.use('/api', appRouter);
+app.use('/api/facebook', facebookRouter);
 app.use('/api/audio', audioRouter);
-app.use('/api/users', userRouter);
-app.use('/api/videos', videoRouter);
+app.use('/api/video', videoRouter);
 
-// Health check endpoint
-app.get('/health', (req, res) => {
-    res.status(200).json({ status: 'ok' });
-});
+// Add Swagger UI to the main server
+app.use(config.server.swaggerPath, swaggerMiddleware, swaggerUiHandler);
 
-// Error handling middleware
-app.use((err: Error, _req: express.Request, res: express.Response, next: express.NextFunction) => {
-    console.error(err.stack);
-    res.status(500).json({ error: 'Something went wrong!' });
-});
+// Initialize AWS Clients
+const s3Client = createS3Client();
+const ddbDocClient = createDynamoDBDocumentClient();
 
-const mongoURL = process.env.MONGODB_URL;
-console.log(mongoURL);
-if (! mongoURL) {
-    throw new Error("MONGODB_URL environment variable is not defined");
-}
+// Make clients available globally
+app.locals.ddbDocClient = ddbDocClient;
+app.locals.s3Client = s3Client;
 
-// Configure mongoose options
-mongoose.set('strictQuery', true);
-
-// Connect to MongoDB
-const connectWithRetry = async () => {
-    try {
-        await mongoose.connect(mongoURL, {
-            serverSelectionTimeoutMS: 5000,
-            socketTimeoutMS: 45000,
-        });
-        console.log('Connected to MongoDB successfully');
-        
-        // Register with Consul
-        await registerService({
-            name: 'server',
-            port: PORT,
-            address: HOST,
-            tags: ['api', 'rest'],
-        });
-        
-        // Start server only after successful MongoDB connection
-        app.listen(PORT, HOST, () => {
-            console.log(`Server is running on port ${PORT}`);
-        });
-    } catch (error) {
-        console.error('MongoDB connection error:', error);
-        console.log('Retrying connection in 5 seconds...');
-        setTimeout(connectWithRetry, 5000);
+// Start server
+const startServer = async () => {
+  try {
+    // Initialize LocalStack resources in development
+    if (config.environment === 'development') {
+      await initializeLocalStack();
     }
+
+    // Register with Consul
+    await registerService({
+      name: 'server',
+      port: config.server.port,
+      address: config.server.host,
+      tags: ['api', 'rest'],
+    });
+    
+    // Start server
+    app.listen(config.server.port, config.server.host, () => {
+      console.log(`Server is running on port ${config.server.port}`);
+      console.log(`Swagger UI is available at http://${config.server.host}:${config.server.port}${config.server.swaggerPath}`);
+    });
+  } catch (error) {
+    console.error('Server startup error:', error);
+    process.exit(1);
+  }
 };
 
-// Initial connection attempt
-connectWithRetry();
+startServer();
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
-    try {
-        await mongoose.connection.close();
-        console.log('MongoDB connection closed');
-        process.exit(0);
-    } catch (error) {
-        console.error('Error during shutdown:', error);
-        process.exit(1);
-    }
+  try {
+    console.log('Shutting down server...');
+    process.exit(0);
+  } catch (error) {
+    console.error('Error during shutdown:', error);
+    process.exit(1);
+  }
 }); 

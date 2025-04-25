@@ -10,7 +10,9 @@
     "forceConsistentCasingInFileNames": true,
     "moduleResolution": "node",
     "sourceMap": true,
-    "inlineSources": true
+    "inlineSources": true,
+    "typeRoots": ["./node_modules/@types", "./src/types"],
+    "types": ["node", "express", "swagger-ui-express"]
   },
   "include": [
     "src/**/*.ts"

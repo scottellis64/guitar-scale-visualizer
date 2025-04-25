@@ -1,43 +1,72 @@
-import { ServiceDiscoveryClient, RegisterInstanceCommand } from "@aws-sdk/client-servicediscovery";
-import { config } from "dotenv";
+import { RegisterInstanceCommand, DiscoverInstancesCommand } from "@aws-sdk/client-servicediscovery";
+import { config } from './config';
+import { createServiceDiscoveryClient } from './factory';
+import { registerService as registerConsulService } from './utils/consul';
 
-config();
+const client = createServiceDiscoveryClient();
 
-const serviceDiscovery = new ServiceDiscoveryClient({
-  region: process.env.AWS_REGION || "us-east-1",
-});
+export const registerService = async (serviceName: string) => {
+  if (config.environment === 'development') {
 
-export async function registerService(serviceName: string, port: number) {
-  if (process.env.NODE_ENV === "development") {
+    console.log('Registering service in development mode');
+
     // In development, use Consul
-    console.log(`Service ${serviceName} registered with Consul`);
+    await registerConsulService({
+      name: serviceName,
+      port: config.server.port,
+      address: config.server.host,
+      tags: ['ffmpeg', 'video-processing'],
+      check: {
+        http: `http://${config.server.host}:${config.server.port}/api/health`,
+        interval: '10s',
+        timeout: '5s',
+      },
+    });
     return;
   }
 
+  console.log('Registering service in production mode');
   try {
     const command = new RegisterInstanceCommand({
-      ServiceId: process.env.AWS_SERVICE_ID,
+      ServiceId: config.aws.serviceId,
       InstanceId: `${serviceName}-${Date.now()}`,
       Attributes: {
-        "AWS_INSTANCE_IPV4": process.env.HOST_IP || "localhost",
-        "AWS_INSTANCE_PORT": port.toString(),
+        "AWS_INSTANCE_IPV4": config.server.host as string,
+        "AWS_INSTANCE_PORT": config.server.port.toString(),
       },
     });
 
-    await serviceDiscovery.send(command);
+    await client.send(command);
     console.log(`Service ${serviceName} registered with AWS Cloud Map`);
   } catch (error) {
-    console.error("Error registering service:", error);
+    console.error('Error registering service:', error);
+    throw error;
   }
-}
+};
 
-export async function discoverService(serviceName: string) {
-  if (process.env.NODE_ENV === "development") {
+export const discoverService = async (serviceName: string) => {
+  if (config.environment === 'development') {
     // In development, use Consul
-    return `http://${serviceName}:3001`;
+    return `http://${serviceName}:${config.server.port}`;
   }
 
-  // In production, use AWS Cloud Map
-  // Implementation would depend on your specific AWS setup
-  return `http://${serviceName}.${process.env.AWS_NAMESPACE}`;
-} 
+  try {
+    const command = new DiscoverInstancesCommand({
+      NamespaceName: config.aws.namespaceId,
+      ServiceName: serviceName,
+      MaxResults: 1,
+    });
+
+    const response = await client.send(command);
+    const instance = response.Instances?.[0];
+
+    if (!instance) {
+      throw new Error(`No instances found for service ${serviceName}`);
+    }
+
+    return `http://${serviceName}.${config.aws.namespaceId}`;
+  } catch (error) {
+    console.error('Error discovering service:', error);
+    throw error;
+  }
+}; 
