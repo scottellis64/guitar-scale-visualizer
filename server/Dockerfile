@@ -1,10 +1,6 @@
 # Development stage
 FROM node:21-alpine3.19 AS development
 
-# Set environment variables
-ARG NODE_ENV=development
-ENV NODE_ENV=${NODE_ENV}
-
 # Install system dependencies
 RUN apk add --no-cache \
     ca-certificates \
@@ -31,10 +27,6 @@ CMD ["yarn", "dev"]
 
 # Production stage
 FROM node:21-alpine3.19 AS production
-
-# Set environment variables
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
 
 # Install system dependencies
 RUN apk add --no-cache \

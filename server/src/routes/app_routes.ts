@@ -1,30 +1,133 @@
-import { Router, Request, Response } from 'express';
+import { Router, Request, Response, RequestHandler } from 'express';
 import { body, validationResult } from 'express-validator';
-import { User } from '../models/User';
-import mongoose from 'mongoose';
-import { Db } from 'mongodb';
+import { createUser, getUser, TABLES } from '../utils/dynamodb';
 import { Scale } from '../models/Scale';
+import { config } from '../config';
 
 const router = Router();
 
-// List all available MongoDB collections
-router.get('/collections', async (_req: Request, res: Response) => {
-    try {
-        // Wait for connection to be ready
-        if (mongoose.connection.readyState !== 1) {
-            return res.status(503).json({ error: 'Database not ready' });
-        }
+/**
+ * @swagger
+ * /api/health:
+ *   get:
+ *     summary: Health check endpoint
+ *     description: Returns the health status of the server and configuration details in development mode
+ *     tags: [Health]
+ *     responses:
+ *       200:
+ *         description: Server health status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: "healthy"
+ *                 config:
+ *                   type: object
+ *                   description: Server configuration (only in development mode)
+ */
+const handleHealthCheck: RequestHandler = (_req, res) => {
+  const response: any = {
+    status: 'healthy',
+  };
 
-        const db = mongoose.connection.db as Db;
-        const collections = await db.listCollections().toArray();
-        const collectionNames = collections.map((collection: { name: string }) => collection.name);
-        res.json({ collections: collectionNames });
-    } catch (error) {
-        console.error('Collections error:', error);
-        res.status(500).json({ error: 'Failed to fetch collections' });
-    }
-});
+  // Only include configuration in development mode
+  if (config.environment === 'development') {
+    response.config = {
+      server: {
+        ...config.server,
+        url: `http://${config.server.host}:${config.server.port}`,
+        swaggerUrl: `http://${config.server.host}:${config.server.port}${config.server.swaggerPath}`,
+      },
+      aws: {
+        ...config.aws,
+        dynamodb: {
+          ...config.aws.dynamodb,
+          url: config.aws.dynamodb.endpoint,
+        },
+        sqs: {
+          ...config.aws.sqs,
+          url: config.aws.sqs.endpoint,
+        },
+        s3: {
+          ...config.aws.s3,
+          url: config.aws.s3.endpoint,
+        },
+      },
+      consul: {
+        ...config.consul,
+        url: `http://${config.consul.host}:${config.consul.port}`,
+      },
+      ffmpeg: {
+        ...config.ffmpeg,
+        url: `http://${config.ffmpeg.host}:${config.ffmpeg.port}`,
+        swaggerUrl: `http://${config.ffmpeg.host}:${config.ffmpeg.swaggerPort}/api-docs`,
+      },
+    };
+  }
 
+  res.json(response);
+};
+
+/**
+ * @swagger
+ * /api/collections:
+ *   get:
+ *     summary: List all available collections
+ *     description: Returns a list of all available collections in the system
+ *     tags: [Collections]
+ *     responses:
+ *       200:
+ *         description: List of collections
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 collections:
+ *                   type: array
+ *                   items:
+ *                     type: string
+ *       500:
+ *         description: Server error
+ */
+const handleListCollections: RequestHandler = async (_req, res, next) => {
+  try {
+    res.json({ collections: Object.values(TABLES) });
+  } catch (error) {
+    console.error('Collections error:', error);
+    res.status(500).json({ error: 'Failed to fetch collections' });
+  }
+};
+
+/**
+ * @swagger
+ * /api/scales:
+ *   get:
+ *     summary: Get all available scales
+ *     description: Returns a list of all available musical scales
+ *     tags: [Scales]
+ *     responses:
+ *       200:
+ *         description: List of scales
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   intervals:
+ *                     type: array
+ *                     items:
+ *                       type: number
+ */
 router.get('/scales', (_req, res) => {
     const scales: Scale[] = [
         { id: '1', name: 'Major Scale', intervals: [0, 2, 4, 5, 7, 9, 11] },
@@ -33,53 +136,142 @@ router.get('/scales', (_req, res) => {
     res.json(scales);
 });
 
-// Create a new user
+/**
+ * @swagger
+ * /api/users:
+ *   post:
+ *     summary: Create a new user
+ *     description: Creates a new user with the provided information
+ *     tags: [Users]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 6
+ *     responses:
+ *       201:
+ *         description: User created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *       400:
+ *         description: Validation error
+ *       500:
+ *         description: Server error
+ */
+const handleCreateUser: RequestHandler = async (req, res, next) => {
+  try {
+    // Check for validation errors
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      res.status(400).json({ errors: errors.array() });
+      return;
+    }
+
+    const { username, email, password } = req.body;
+    const id = await createUser({ username, email, password });
+    res.status(201).json({ id, username, email });
+  } catch (error) {
+    console.error('Create user error:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+};
+
+/**
+ * @swagger
+ * /api/users/{id}:
+ *   get:
+ *     summary: Get user by ID
+ *     description: Retrieves a user's information by their ID
+ *     tags: [Users]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 username:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *                 updatedAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: User not found
+ *       500:
+ *         description: Server error
+ */
+const handleGetUser: RequestHandler = async (req, res, next) => {
+  try {
+    const user = await getUser(req.params.id);
+    if (!user) {
+      res.status(404).json({ error: 'User not found' });
+      return;
+    }
+    res.json(user);
+  } catch (error) {
+    console.error('Get user error:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+};
+
+// Register routes
+router.get('/health', handleHealthCheck);
+router.get('/collections', handleListCollections);
 router.post('/users', 
-    [
-        body('username')
-            .trim()
-            .isLength({ min: 3 })
-            .withMessage('Username must be at least 3 characters long'),
-        body('email')
-            .trim()
-            .isEmail()
-            .withMessage('Please provide a valid email'),
-        body('password')
-            .isLength({ min: 6 })
-            .withMessage('Password must be at least 6 characters long')
-    ],
-    async (req: Request, res: Response) => {
-        try {
-            // Check for validation errors
-            const errors = validationResult(req);
-            if (!errors.isEmpty()) {
-                return res.status(400).json({ errors: errors.array() });
-            }
-
-            const { username, email, password } = req.body;
-            const user = new User({ username, email, password });
-            await user.save();
-            res.status(201).json(user);
-        } catch (error: unknown) {
-            if (error instanceof mongoose.Error.ValidationError) {
-                return res.status(400).json({ error: error.message });
-            }
-            if (error instanceof mongoose.Error && 'code' in error && error.code === 11000) {
-                return res.status(400).json({ error: 'Username or email already exists' });
-            }
-            res.status(500).json({ error: 'An unexpected error occurred' });
-        }
-    }
+  [
+    body('username')
+      .trim()
+      .isLength({ min: 3 })
+      .withMessage('Username must be at least 3 characters long'),
+    body('email')
+      .trim()
+      .isEmail()
+      .withMessage('Please provide a valid email'),
+    body('password')
+      .isLength({ min: 6 })
+      .withMessage('Password must be at least 6 characters long')
+  ],
+  handleCreateUser
 );
-
-// Get all users
-router.get('/users', async (_req, res) => {
-    try {
-        const users = await User.find().select('-password');
-        res.json(users);
-    } catch (error) {
-        res.status(500).json({ error: 'Failed to fetch users' });
-    }
-});
+router.get('/users/:id', handleGetUser);
 
 export default router; 

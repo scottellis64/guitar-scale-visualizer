@@ -1,194 +1,277 @@
-import { Router, Request, Response } from 'express';
-import axios from 'axios';
-import { DownloadedReel } from '../models/DownloadedReel';
-import mongoose from 'mongoose';
-import { GridFSBucket } from 'mongodb';
-import { Db } from 'mongodb';
+import { Router, RequestHandler } from 'express';
+import { SendMessageCommand } from "@aws-sdk/client-sqs";
+import { v4 as uuidv4 } from 'uuid';
+import { PutCommand } from "@aws-sdk/lib-dynamodb";
+import { 
+  getMedia, 
+  deleteMedia, 
+  listMedia, 
+  BUCKETS,
+  TABLES,
+  ddbDocClient
+} from '../utils';
+import { createSQSClient } from '../factory';
+import { config } from '../config';
+
+interface MediaMetadata {
+  id: string;
+  title?: string;
+  uploader?: string;
+  description?: string;
+  duration?: number;
+  viewCount?: number;
+  thumbnail?: string;
+  url?: string;
+  status: string;
+  userId?: string;
+  createdAt?: string;
+}
 
 const router = Router();
+const sqsClient = createSQSClient();
 
-// Initialize GridFS bucket
-const conn = mongoose.connection;
-let gfsBucket: GridFSBucket;
-
-conn.once('open', () => {
-    if (!conn.db) {
-        throw new Error('Database connection not established');
+/**
+ * @swagger
+ * /api/facebook/download:
+ *   post:
+ *     summary: Download Facebook reel
+ *     description: Initiates a download of a Facebook reel
+ *     tags: [Facebook]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - url
+ *             properties:
+ *               url:
+ *                 type: string
+ *                 description: Facebook reel URL
+ *               title:
+ *                 type: string
+ *                 description: Custom title for the reel
+ *               uploader:
+ *                 type: string
+ *                 description: Name of the uploader
+ *               userId:
+ *                 type: string
+ *                 description: User ID
+ *     responses:
+ *       202:
+ *         description: Download request accepted
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                 operationId:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *       400:
+ *         description: URL is required
+ *       500:
+ *         description: Server error
+ */
+const handleDownloadReel: RequestHandler = async (req, res, next) => {
+  try {
+    const { url, title, uploader, userId } = req.body;
+    
+    if (!url) {
+      res.status(400).json({ error: 'URL is required' });
+      return;
     }
-    gfsBucket = new GridFSBucket(conn.db, {
-        bucketName: 'reels'
+
+    // Generate a unique ID for this operation
+    const operationId = uuidv4();
+
+    // Save initial metadata to DynamoDB
+    const initialMetadata: MediaMetadata = {
+      id: operationId,
+      status: 'PENDING',
+      url,
+      title,
+      uploader,
+      userId: userId || 'anonymous',
+      createdAt: new Date().toISOString()
+    };
+
+    await ddbDocClient.send(new PutCommand({
+      TableName: TABLES.USERS, // Using USERS table for now
+      Item: initialMetadata
+    }));
+
+    // Send message to SQS
+    await sqsClient.send(new SendMessageCommand({
+      QueueUrl: config.ffmpeg.queueUrl,
+      MessageBody: JSON.stringify({
+        operationId,
+        type: 'FACEBOOK_DOWNLOAD',
+        url,
+        title,
+        uploader,
+        userId: userId || 'anonymous'
+      })
+    }));
+
+    res.status(202).json({ 
+      message: 'Download request accepted',
+      operationId,
+      status: 'PENDING'
     });
-});
+  } catch (error) {
+    console.error('Facebook download error:', error);
+    res.status(500).json({ error: 'Failed to process download request' });
+  }
+};
 
-// List all Facebook reels with pagination
-router.get('/list', async (req: Request, res: Response) => {
-    try {
-        const page = parseInt(req.query.page as string) || 1;
-        const limit = parseInt(req.query.limit as string) || 10;
-        const sortBy = req.query.sortBy as string || 'uploadDate';
-        const sortOrder = req.query.sortOrder === 'asc' ? 1 : -1;
+/**
+ * @swagger
+ * /api/facebook/reels/{id}:
+ *   get:
+ *     summary: Get reel by ID
+ *     description: Retrieves information about a specific Facebook reel
+ *     tags: [Facebook]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the reel
+ *     responses:
+ *       200:
+ *         description: Reel information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 title:
+ *                   type: string
+ *                 uploader:
+ *                   type: string
+ *                 description:
+ *                   type: string
+ *                 duration:
+ *                   type: number
+ *                 viewCount:
+ *                   type: number
+ *                 thumbnail:
+ *                   type: string
+ *                 status:
+ *                   type: string
+ *                 url:
+ *                   type: string
+ *       404:
+ *         description: Reel not found
+ *       500:
+ *         description: Server error
+ */
+const handleGetReel: RequestHandler = async (req, res, next) => {
+  try {
+    const { metadata } = await getMedia(req.params.id);
+    const mediaMetadata = metadata as unknown as MediaMetadata;
+    res.json({
+      id: mediaMetadata.id,
+      title: mediaMetadata.title,
+      uploader: mediaMetadata.uploader,
+      description: mediaMetadata.description,
+      duration: mediaMetadata.duration,
+      viewCount: mediaMetadata.viewCount,
+      thumbnail: mediaMetadata.thumbnail,
+      status: mediaMetadata.status,
+      url: mediaMetadata.url
+    });
+  } catch (error) {
+    console.error('Get reel error:', error);
+    res.status(500).json({ error: 'Failed to get reel' });
+  }
+};
 
-        const skip = (page - 1) * limit;
+/**
+ * @swagger
+ * /api/facebook/reels:
+ *   get:
+ *     summary: List all reels
+ *     description: Retrieves a list of all available Facebook reels
+ *     tags: [Facebook]
+ *     responses:
+ *       200:
+ *         description: List of reels
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 reels:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: string
+ *                       title:
+ *                         type: string
+ *                       uploader:
+ *                         type: string
+ *                       status:
+ *                         type: string
+ *       500:
+ *         description: Server error
+ */
+const handleListReels: RequestHandler = async (_req, res, next) => {
+  try {
+    const reels = await listMedia(BUCKETS.REELS);
+    res.json({ reels });
+  } catch (error) {
+    console.error('List reels error:', error);
+    res.status(500).json({ error: 'Failed to list reels' });
+  }
+};
 
-        // Get total count
-        const total = await DownloadedReel.countDocuments();
+/**
+ * @swagger
+ * /api/facebook/reels/{id}:
+ *   delete:
+ *     summary: Delete reel
+ *     description: Deletes a specific Facebook reel
+ *     tags: [Facebook]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The ID of the reel
+ *     responses:
+ *       200:
+ *         description: Reel deleted successfully
+ *       404:
+ *         description: Reel not found
+ *       500:
+ *         description: Server error
+ */
+const handleDeleteReel: RequestHandler = async (req, res, next) => {
+  try {
+    await deleteMedia(req.params.id);
+    res.status(200).json({ message: 'Reel deleted successfully' });
+  } catch (error) {
+    console.error('Delete reel error:', error);
+    res.status(500).json({ error: 'Failed to delete reel' });
+  }
+};
 
-        // Get paginated reels
-        const reels = await DownloadedReel.find()
-            .sort({ [sortBy]: sortOrder })
-            .skip(skip)
-            .limit(limit)
-            .select('-__v'); // Exclude version field
-
-        // Get additional metadata from GridFS
-        const reelsWithMetadata = await Promise.all(
-            reels.map(async (reel) => {
-                const file = await gfsBucket.find({ _id: reel.gridfsId }).next();
-                return {
-                    ...reel.toObject(),
-                    size: file?.length,
-                    contentType: file?.metadata?.contentType,
-                    uploadDate: file?.metadata?.uploadDate
-                };
-            })
-        );
-
-        res.json({
-            data: reelsWithMetadata,
-            pagination: {
-                total,
-                page,
-                limit,
-                totalPages: Math.ceil(total / limit)
-            }
-        });
-    } catch (error) {
-        console.error('Error listing Facebook reels:', error);
-        res.status(500).json({
-            error: 'Failed to list Facebook reels',
-            details: error instanceof Error ? error.message : 'Unknown error'
-        });
-    }
-});
-
-router.post('/download', async (req: Request, res: Response) => {
-    try {
-        const { url, title, uploader } = req.body;
-        
-        if (!url) {
-            return res.status(400).json({ error: 'URL is required' });
-        }
-
-        if (!mongoose.connection.readyState) {
-            return res.status(503).json({ error: 'Database not ready' });
-        }
-
-        const ffmpegServerUrl = `http://${process.env.FFMPEG_HOST}:${process.env.FFMPEG_PORT}`;
-        
-        // Get metadata first
-        const metadataResponse = await axios.get(`${ffmpegServerUrl}/facebook/metadata`, {
-            params: { url }
-        });
-        const metadata = metadataResponse.data;
-        
-        // Call ffmpeg server to download the reel
-        const downloadResponse = await axios.post(`${ffmpegServerUrl}/facebook/download`, {
-            url
-        }, {
-            responseType: 'arraybuffer'
-        });
-
-        // Use metadata for filename and title if not provided
-        const finalTitle = title || metadata.title;
-        const finalUploader = uploader || metadata.uploader;
-        const filename = `${finalTitle}_${Date.now()}.mp4`;
-
-        // Save to MongoDB GridFS
-        const db = mongoose.connection.db as Db;
-        const bucket = new GridFSBucket(db, {
-            bucketName: 'reels'
-        });
-
-        const uploadStream = bucket.openUploadStream(filename, {
-            metadata: {
-                contentType: 'video/mp4',
-                uploadDate: metadata.uploadDate,
-                source: 'facebook',
-                originalUrl: url,
-                title: finalTitle,
-                uploader: finalUploader,
-                description: metadata.description,
-                duration: metadata.duration,
-                viewCount: metadata.viewCount,
-                thumbnail: metadata.thumbnail
-            }
-        });
-
-        // Write the video to GridFS
-        uploadStream.end(Buffer.from(downloadResponse.data));
-
-        // Wait for upload to complete
-        await new Promise<void>((resolve, reject) => {
-            uploadStream.on('finish', () => resolve());
-            uploadStream.on('error', reject);
-        });
-
-        // Get the video file info
-        const videoFile = await bucket.find({ _id: uploadStream.id }).next();
-        if (!videoFile) {
-            throw new Error('Failed to retrieve video file after upload');
-        }
-
-        // Save to MongoDB
-        const downloadedReel = new DownloadedReel({
-            title: finalTitle,
-            uploader: finalUploader,
-            description: metadata.description,
-            duration: metadata.duration,
-            viewCount: metadata.viewCount,
-            originalUrl: url,
-            filename,
-            path: `reels/${videoFile._id}`,
-            gridfsId: uploadStream.id,
-            thumbnail: metadata.thumbnail
-        });
-
-        await downloadedReel.save();
-
-        // Return success response with URLs
-        res.status(201).json({
-            id: videoFile._id.toString(),
-            filename: videoFile.filename,
-            title: finalTitle,
-            uploader: finalUploader,
-            description: metadata.description,
-            duration: metadata.duration,
-            viewCount: metadata.viewCount,
-            contentType: videoFile.metadata?.contentType,
-            uploadDate: videoFile.metadata?.uploadDate,
-            size: videoFile.length,
-            thumbnail: metadata.thumbnail,
-            urls: {
-                download: `/api/reels/${videoFile._id}`,
-                stream: `/api/reels/${videoFile._id}/stream`
-            }
-        });
-
-    } catch (error) {
-        console.error('Error downloading Facebook reel:', error);
-        if (axios.isAxiosError(error) && error.response) {
-            // If the error came from ffmpeg-server, include its error details
-            res.status(error.response.status).json({
-                error: 'Failed to download Facebook reel',
-                details: error.response.data
-            });
-        } else {
-            res.status(500).json({
-                error: 'Failed to download Facebook reel',
-                details: error instanceof Error ? error.message : 'Unknown error'
-            });
-        }
-    }
-});
+// Register routes
+router.post('/download', handleDownloadReel);
+router.get('/reels/:id', handleGetReel);
+router.get('/reels', handleListReels);
+router.delete('/reels/:id', handleDeleteReel);
 
 export default router; 

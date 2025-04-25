@@ -1,11 +1,15 @@
-import healthRouter from './health';
-import conversionsRouter from './conversions';
-import youtubeRouter from './youtube';
-import facebookRouter from './facebook';
+import { Router } from 'express';
+import facebookRoutes from './facebook';
+import youtubeRoutes from './youtube';
+import conversionRoutes from './conversion';
+import healthRoutes from './health';
 
-export {
-    healthRouter,
-    conversionsRouter,
-    youtubeRouter,
-    facebookRouter
-}; 
+const router = Router();
+
+// Register routes
+router.use('/facebook', facebookRoutes);
+router.use('/youtube', youtubeRoutes);
+router.use('/conversion', conversionRoutes);
+router.use('/health', healthRoutes);
+
+export default router; 

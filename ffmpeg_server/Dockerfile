@@ -1,16 +1,14 @@
 # Development stage
 FROM node:21-alpine3.19 AS development
 
-# Set environment variables
-ARG NODE_ENV=development
-ENV NODE_ENV=${NODE_ENV}
-ENV DEBUG_MODE=false
-
 # Install system dependencies and setup Docker access
 RUN apk upgrade -U \ 
     && apk add --no-cache \
         ca-certificates \
         ffmpeg \
+        ffmpeg-libs \
+        x264 \
+        x265 \
         libva-intel-driver \
         libva \
         libvdpau \
@@ -39,26 +37,31 @@ RUN mkdir -p /app/data/tmp /app/data/youtube /app/data/inbound \
 # Copy package files and install dependencies
 COPY package.json yarn.lock ./
 RUN yarn install
+
+# Copy source code
 COPY . .
 
+# Expose ports for API and debugging
 EXPOSE 3001
-EXPOSE 9229
+EXPOSE 9230
 
+# Set NODE_ENV to development by default
+ENV NODE_ENV=development
+
+# Start the development server with debugging enabled
 CMD ["yarn", "dev"]
 
 # Production stage
 FROM node:21-alpine3.19 AS production
-
-# Set environment variables
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-ENV DEBUG_MODE=false
 
 # Install system dependencies and setup Docker access
 RUN apk upgrade -U \ 
     && apk add --no-cache \
         ca-certificates \
         ffmpeg \
+        ffmpeg-libs \
+        x264 \
+        x265 \
         libva-intel-driver \
         libva \
         libvdpau \
@@ -91,7 +94,6 @@ COPY . .
 RUN yarn build
 
 EXPOSE 3001
-EXPOSE 9229
 
 CMD ["yarn", "start"]
 

@@ -1,6 +1,6 @@
 {
   "watch": ["src"],
-  "ext": "ts",
-  "ignore": ["src/**/*.spec.ts"],
-  "exec": "tsc && node --inspect=0.0.0.0:9229 --enable-source-maps --require source-map-support/register dist/index.js"
+  "ext": ".ts,.js",
+  "ignore": [],
+  "exec": "node --inspect=0.0.0.0:9230 -r ts-node/register src/index.ts"
 } 

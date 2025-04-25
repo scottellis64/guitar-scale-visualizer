@@ -1,0 +1,9 @@
+Rule Name: yaml-extension.mdc
+Description: 
+All YAML files in the project must use the .yml extension instead of .yaml. This includes:
+1. Docker Compose files (docker-compose.yml, docker-compose-dev.yml)
+2. GitHub Actions workflow files (.github/workflows/*.yml)
+3. Kubernetes manifests (k8s/*.yml)
+4. Any other YAML configuration files
+
+The .yml extension is the preferred standard in the industry and provides better compatibility with various tools and systems. 

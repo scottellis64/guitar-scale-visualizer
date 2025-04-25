@@ -1,0 +1,33 @@
+Rule Name: generated-code-naming-convention.mdc
+Description: 
+Generated code should follow these naming conventions:
+1. Source files should use snake_case (e.g., queue_service.ts, task_service.ts)
+   - Exception: Model files should use PascalCase to match their exported class names (e.g., User.ts, Media.ts)
+2. Each package/directory should have an index.ts file that exports all public members
+3. Class names and exported members should use camelCase (e.g., queueService, taskService)
+4. The index.ts file should import and re-export all public members from the package
+5. All imports should use single quotes (e.g., import { x } from './y')
+
+Example:
+```
+// queue_service.ts
+export class QueueService { ... }
+export const queueService = new QueueService();
+
+// task_service.ts
+export class TaskService { ... }
+export const taskService = new TaskService();
+
+// User.ts (model file)
+export class User { ... }
+
+// index.ts
+import { queueService } from './queue_service';
+import { taskService } from './task_service';
+import { User } from './User';
+
+export {
+  queueService,
+  taskService,
+  User
+}; 

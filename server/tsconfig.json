@@ -13,13 +13,14 @@
     "baseUrl": ".",
     "sourceMap": true,
     "inlineSources": true,
+    "declaration": true,
     "paths": {
       "@models/*": ["src/models/*"],
       "@routes/*": ["src/routes/*"],
       "@types/*": ["src/types/*"],
-      "*": ["node_modules/*"]
+      "*": ["node_modules/*", "src/*"]
     }
   },
-  "include": ["src/**/*"],
+  "include": ["src/**/*", "src/**/*.d.ts"],
   "exclude": ["node_modules", "dist"]
 } 
