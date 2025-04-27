@@ -45,6 +45,10 @@ export const config = {
       region: process.env.FFMPEG_S3_REGION as string,
     }
   },
+  consul: {
+    host: process.env.CONSUL_HOST,
+    port: Number(process.env.CONSUL_PORT),
+  },
   ffmpeg: {
     tempDir: process.env.FFMPEG_TEMP_DIR as string,
     maxConcurrentJobs: Number(process.env.FFMPEG_MAX_CONCURRENT_JOBS),
@@ -55,6 +59,7 @@ export const config = {
     defaultAudioBitrate: process.env.FFMPEG_DEFAULT_AUDIO_BITRATE as string,
     highQualityVideoBitrate: process.env.FFMPEG_HIGH_QUALITY_VIDEO_BITRATE as string,
     queueName: process.env.FFMPEG_QUEUE_NAME as string,
+    facebookProcessorQueueName: process.env.FFMPEG_FACEBOOK_PROCESSOR_QUEUE_NAME || 'facebook-processor',
   },
   logging: {
     level: process.env.FFMPEG_LOG_LEVEL as string,

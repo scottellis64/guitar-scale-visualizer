@@ -1,5 +1,6 @@
 export const TABLES = {
   USERS: 'users',
+  REELS: 'reels',
 } as const;
 
 export const BUCKETS = {

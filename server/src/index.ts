@@ -4,7 +4,7 @@ import express from 'express';
 import cors from 'cors';
 
 import { appRouter, facebookRouter, audioRouter, videoRouter } from './routes';
-import { registerService } from './utils';
+import { ServiceDiscoveryService } from './services';
 import { initializeLocalStack } from './utils/initLocalstack';
 import { config } from './config';
 import { swaggerMiddleware, swaggerUiHandler } from './swagger';
@@ -14,20 +14,21 @@ import { createDynamoDBDocumentClient, createS3Client } from './factory';
 dotenv.config();
 
 const app = express();
+const serviceDiscovery = new ServiceDiscoveryService();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// API documentation
+app.use(config.server.swaggerPath, swaggerMiddleware, swaggerUiHandler);
+
 // Routes
 app.use('/api', appRouter);
 app.use('/api/facebook', facebookRouter);
 app.use('/api/audio', audioRouter);
 app.use('/api/video', videoRouter);
-
-// Add Swagger UI to the main server
-app.use(config.server.swaggerPath, swaggerMiddleware, swaggerUiHandler);
 
 // Initialize AWS Clients
 const s3Client = createS3Client();
@@ -45,12 +46,17 @@ const startServer = async () => {
       await initializeLocalStack();
     }
 
-    // Register with Consul
-    await registerService({
+    // Register with service discovery
+    await serviceDiscovery.registerService({
       name: 'server',
       port: config.server.port,
       address: config.server.host,
       tags: ['api', 'rest'],
+      check: {
+        http: `http://${config.server.host}:${config.server.port}/api/health`,
+        interval: '10s',
+        timeout: '5s',
+      },
     });
     
     // Start server

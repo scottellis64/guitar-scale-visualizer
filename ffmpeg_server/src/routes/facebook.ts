@@ -1,9 +1,7 @@
-import { Router } from 'express';
-import { exec } from 'child_process';
-import { promisify } from 'util';
+import { Router, Request, Response, RequestHandler } from 'express';
 import { createFacebookService } from '../factory';
+import { v4 as uuidv4 } from 'uuid';
 
-const execAsync = promisify(exec);
 const router = Router();
 const facebookService = createFacebookService();
 
@@ -48,27 +46,17 @@ const facebookService = createFacebookService();
  *       500:
  *         description: Server error
  */
-router.get('/metadata', async (req, res) => {
+const metadataHandler: RequestHandler = async (req, res): Promise<void> => {
     try {
         const { url } = req.query;
         
         if (!url) {
-            return res.status(400).json({ error: 'URL is required' });
+            res.status(400).json({ error: 'URL is required' });
+            return;
         }
 
-        const command = `yt-dlp --dump-json --no-download "${url}"`;
-        const { stdout } = await execAsync(command);
-        const metadata = JSON.parse(stdout);
-        
-        res.json({
-            title: metadata.title || 'Untitled Reel',
-            uploader: metadata.uploader || 'Unknown',
-            description: metadata.description || '',
-            duration: metadata.duration || 0,
-            viewCount: metadata.view_count || 0,
-            uploadDate: metadata.upload_date ? new Date(metadata.upload_date) : new Date(),
-            thumbnail: metadata.thumbnail || ''
-        });
+        const metadata = await facebookService.getMetadata(url as string);
+        res.json(metadata);
     } catch (error) {
         console.error('Error getting reel metadata:', error);
         res.status(500).json({ 
@@ -76,7 +64,9 @@ router.get('/metadata', async (req, res) => {
             details: error instanceof Error ? error.message : String(error)
         });
     }
-});
+};
+
+router.get('/metadata', metadataHandler);
 
 /**
  * @swagger
@@ -102,27 +92,36 @@ router.get('/metadata', async (req, res) => {
  *               uploader:
  *                 type: string
  *                 description: Optional uploader name
+ *               userId:
+ *                 type: string
+ *                 description: Optional user ID
  *     responses:
  *       200:
- *         description: Video downloaded successfully
+ *         description: Video download initiated successfully
  *         content:
  *           application/json:
  *             schema:
  *               type: object
  *               properties:
- *                 id:
+ *                 operationId:
  *                   type: string
  *                 status:
- *                   type: string
- *                 url:
  *                   type: string
  *       500:
  *         description: Server error
  */
 router.post('/download', async (req, res) => {
     try {
-        const result = await facebookService.downloadVideo(req.body);
-        res.json(result);
+        const operationId = uuidv4();
+        const result = await facebookService.downloadVideo({
+            ...req.body,
+            operationId
+        });
+        res.json({
+            operationId,
+            status: 'PROCESSING',
+            s3File: result.s3File
+        });
     } catch (error) {
         console.error('Facebook download error:', error);
         res.status(500).json({ error: 'Failed to download Facebook video' });

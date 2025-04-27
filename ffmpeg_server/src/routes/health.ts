@@ -28,7 +28,7 @@ const router = Router();
  *                   type: object
  *                   description: "Configuration object (only in development mode)"
  */
-router.get('/', (req, res) => {
+router.get('/', (_req, res) => {
   const response: any = {
     status: 'healthy',
     timestamp: new Date().toISOString()

@@ -1,7 +1,7 @@
 import { Router, RequestHandler } from 'express';
 import { SendMessageCommand } from "@aws-sdk/client-sqs";
 import { v4 as uuidv4 } from 'uuid';
-import { PutCommand } from "@aws-sdk/lib-dynamodb";
+import { PutCommand, GetCommand } from "@aws-sdk/lib-dynamodb";
 import { 
   getMedia, 
   deleteMedia, 
@@ -11,7 +11,7 @@ import {
   ddbDocClient
 } from '../utils';
 import { createSQSClient } from '../factory';
-import { config } from '../config';
+import { getFfmpegQueueUrl } from '../config';
 
 interface MediaMetadata {
   id: string;
@@ -107,7 +107,7 @@ const handleDownloadReel: RequestHandler = async (req, res, next) => {
 
     // Send message to SQS
     await sqsClient.send(new SendMessageCommand({
-      QueueUrl: config.ffmpeg.queueUrl,
+      QueueUrl: getFfmpegQueueUrl(),
       MessageBody: JSON.stringify({
         operationId,
         type: 'FACEBOOK_DOWNLOAD',
@@ -126,6 +126,71 @@ const handleDownloadReel: RequestHandler = async (req, res, next) => {
   } catch (error) {
     console.error('Facebook download error:', error);
     res.status(500).json({ error: 'Failed to process download request' });
+  }
+};
+
+/**
+ * @swagger
+ * /api/facebook/status/{operationId}:
+ *   get:
+ *     summary: Check download status
+ *     description: Checks the status of a Facebook reel download
+ *     tags: [Facebook]
+ *     parameters:
+ *       - in: path
+ *         name: operationId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: The operation ID returned from the download request
+ *     responses:
+ *       200:
+ *         description: Download status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [PENDING, PROCESSING, COMPLETED, FAILED]
+ *                 videoUrl:
+ *                   type: string
+ *                   description: URL to download the video (only if status is COMPLETED)
+ *       404:
+ *         description: Operation not found
+ *       500:
+ *         description: Server error
+ */
+const handleCheckStatus: RequestHandler = async (req, res, next) => {
+  try {
+    const { operationId } = req.params;
+    
+    // Get metadata from DynamoDB
+    const { Item: metadata } = await ddbDocClient.send(new GetCommand({
+      TableName: TABLES.USERS,
+      Key: { id: operationId }
+    }));
+
+    if (!metadata) {
+      res.status(404).json({ error: 'Operation not found' });
+      return;
+    }
+
+    const response: any = {
+      status: metadata.status
+    };
+
+    // If the video is ready, include the download URL
+    if (metadata.status === 'COMPLETED') {
+      const { metadata: videoMetadata } = await getMedia(operationId);
+      response.videoUrl = `/api/facebook/reels/${operationId}`;
+    }
+
+    res.json(response);
+  } catch (error) {
+    console.error('Status check error:', error);
+    res.status(500).json({ error: 'Failed to check status' });
   }
 };
 
@@ -270,6 +335,7 @@ const handleDeleteReel: RequestHandler = async (req, res, next) => {
 
 // Register routes
 router.post('/download', handleDownloadReel);
+router.get('/status/:operationId', handleCheckStatus);
 router.get('/reels/:id', handleGetReel);
 router.get('/reels', handleListReels);
 router.delete('/reels/:id', handleDeleteReel);

@@ -2,9 +2,7 @@ import { Router, Request, Response, RequestHandler } from 'express';
 import multer from 'multer';
 import ffmpeg from 'fluent-ffmpeg';
 import { PassThrough } from 'stream';
-import { validateRequest } from '../middleware';
-import { saveMedia, getMedia, deleteMedia, listMedia, BUCKETS } from '../utils/dynamodb';
-import { downloadSchema } from '../schemas';
+import { getMedia, deleteMedia, listMedia, BUCKETS } from '../utils';
 
 const router = Router();
 const upload = multer({ storage: multer.memoryStorage() });
@@ -55,15 +53,12 @@ const upload = multer({ storage: multer.memoryStorage() });
  */
 const handleGetInfo: RequestHandler = async (req, res, next) => {
   try {
-    const { metadata } = await getMedia(req.params.id, BUCKETS.AUDIO);
+    const { metadata } = await getMedia(req.params.id);
     res.json({
       id: metadata.id,
       filename: metadata.filename,
       contentType: metadata.contentType,
       uploadDate: metadata.createdAt,
-      title: metadata.title,
-      artist: metadata.artist,
-      duration: metadata.duration,
       size: metadata.size
     });
   } catch (error) {
@@ -101,8 +96,9 @@ const handleGetInfo: RequestHandler = async (req, res, next) => {
  */
 const handleGetAudio: RequestHandler = async (req, res, next) => {
   try {
-    const { url } = await getMedia(req.params.id, BUCKETS.AUDIO);
-    res.redirect(url);
+    const { stream } = await getMedia(req.params.id);
+    res.set('Content-Type', 'audio/mpeg');
+    stream.pipe(res);
   } catch (error) {
     console.error('Audio download error:', error);
     res.status(500).json({ error: 'Failed to download audio file' });
@@ -144,14 +140,14 @@ const handleGetAudio: RequestHandler = async (req, res, next) => {
  */
 const handleStreamAudio: RequestHandler = async (req, res, next) => {
   try {
-    const { url } = await getMedia(req.params.id, BUCKETS.AUDIO);
+    const { stream } = await getMedia(req.params.id);
     const speed = parseFloat(req.query.speed as string) || 1.0;
     const passThrough = new PassThrough();
 
     res.set('Content-Type', 'audio/mpeg');
     res.set('Accept-Ranges', 'bytes');
 
-    ffmpeg(url)
+    ffmpeg(stream)
       .audioFilters(`atempo=${speed}`)
       .format('mp3')
       .on('error', (err) => {
@@ -239,7 +235,7 @@ const handleListAudio: RequestHandler = async (_req, res, next) => {
  */
 const handleDeleteAudio: RequestHandler = async (req, res, next) => {
   try {
-    await deleteMedia(req.params.id, BUCKETS.AUDIO);
+    await deleteMedia(req.params.id);
     res.status(200).json({ message: 'Audio file deleted successfully' });
   } catch (error) {
     console.error('Delete audio error:', error);

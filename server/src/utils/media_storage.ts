@@ -3,6 +3,7 @@ import { ScanCommand } from "@aws-sdk/client-dynamodb";
 import { PutCommand, GetCommand, DeleteCommand } from "@aws-sdk/lib-dynamodb";
 import { config } from '../config';
 import { createS3Client, createDynamoDBDocumentClient } from '../factory';
+import { Readable } from 'stream';
 
 // Initialize clients
 const s3Client = createS3Client();
@@ -55,7 +56,7 @@ export async function saveMedia(
   return mediaItem;
 }
 
-export async function getMedia(id: string): Promise<{ metadata: MediaMetadata; stream: ReadableStream }> {
+export async function getMedia(id: string): Promise<{ metadata: MediaMetadata; stream: Readable }> {
   // Get metadata from DynamoDB
   const { Item: metadata } = await ddbDocClient.send(new GetCommand({
     TableName: getTableName('media'),
@@ -74,7 +75,7 @@ export async function getMedia(id: string): Promise<{ metadata: MediaMetadata; s
 
   return {
     metadata: metadata as MediaMetadata,
-    stream: stream as ReadableStream,
+    stream: stream as Readable,
   };
 }
 
