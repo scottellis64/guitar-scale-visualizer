@@ -5,7 +5,7 @@ dotenv.config();
 
 export const config = {
   server: {
-    host: process.env.SERVER_HOST as string,
+    host: process.env.SERVER_INTERNAL_HOST as string,
     port: Number(process.env.SERVER_PORT),
     swaggerPath: '/api-docs',
   },
@@ -40,6 +40,7 @@ export const config = {
     host: process.env.FFMPEG_INTERNAL_HOST as string,
     port: Number(process.env.FFMPEG_PORT),
     queueName: process.env.FFMPEG_QUEUE_NAME as string,
+    facebookProcessorQueueName: process.env.FFMPEG_FACEBOOK_PROCESSOR_QUEUE_NAME || 'facebook-processor',
   },
   jwt: {
     secret: process.env.JWT_SECRET as string,
@@ -69,6 +70,7 @@ const validateConfig = () => {
     'AWS_REGION',
     'AWS_ACCESS_KEY_ID',
     'AWS_SECRET_ACCESS_KEY',
+    'FFMPEG_QUEUE_NAME',
   ];
 
   const missingVars = requiredVars.filter(varName => !process.env[varName]);

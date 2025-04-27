@@ -1,15 +1,16 @@
 import { promises as fs } from 'fs';
-import { exec } from 'child_process';
-import { promisify } from 'util';
 import path from 'path';
 import ffmpeg from 'fluent-ffmpeg';
 import { config } from '../config';
+import { createStorageService, createNotificationService } from '../factory';
 
-const execAsync = promisify(exec);
 
 export interface ConversionParams {
-  inputBuffer: Buffer;
-  inputFormat: string;
+  operationId: string;
+  sourceS3File: {
+    bucket: string;
+    key: string;
+  };
   outputFormat: string;
   quality?: string;
   title?: string;
@@ -17,8 +18,11 @@ export interface ConversionParams {
 }
 
 export interface ExtractAudioParams {
-  inputBuffer: Buffer;
-  inputFormat: string;
+  operationId: string;
+  sourceS3File: {
+    bucket: string;
+    key: string;
+  };
   outputFormat: string;
   title?: string;
   userId?: string;
@@ -32,11 +36,18 @@ export class ConversionService {
   }
 
   async convertMedia(params: ConversionParams) {
-    const { inputBuffer, inputFormat, outputFormat, quality, title } = params;
-    const tempInputPath = path.join(this.tempDir, `convert_${Date.now()}.${inputFormat}`);
+    const { operationId, sourceS3File, outputFormat, quality, title } = params;
+    const tempInputPath = path.join(this.tempDir, `convert_${Date.now()}.${path.extname(sourceS3File.key)}`);
     const tempOutputPath = path.join(this.tempDir, `convert_${Date.now()}_output.${outputFormat}`);
 
+    const storageService = createStorageService();
+    const notificationService = createNotificationService();
+
     try {
+      // Download from S3
+      console.log('Downloading from S3...');
+      const inputBuffer = await storageService.downloadFromS3(sourceS3File.bucket, sourceS3File.key);
+
       // Write input buffer to temporary file
       await fs.writeFile(tempInputPath, inputBuffer);
 
@@ -68,15 +79,30 @@ export class ConversionService {
       // Read the processed file
       const outputBuffer = await fs.readFile(tempOutputPath);
 
+      // Save to S3
+      const storageResult = await storageService.saveVideoToS3({
+        buffer: outputBuffer,
+        operationId,
+        title,
+        contentType: `video/${outputFormat}`,
+        prefix: 'converted'
+      });
+
+      // Send notification
+      await notificationService.sendNotification({
+        operationId,
+        type: 'CONVERSION_COMPLETE',
+        s3File: {
+          ...storageResult.s3File,
+          sourceS3File: sourceS3File
+        }
+      });
+
       // Clean up temporary files
       await fs.unlink(tempInputPath);
       await fs.unlink(tempOutputPath);
 
-      return {
-        buffer: outputBuffer,
-        filename: title ? `${title}.${outputFormat}` : `converted_${Date.now()}.${outputFormat}`,
-        mimetype: `video/${outputFormat}`
-      };
+      return storageResult;
     } catch (error) {
       // Clean up temporary files in case of error
       try {
@@ -90,11 +116,18 @@ export class ConversionService {
   }
 
   async extractAudio(params: ExtractAudioParams) {
-    const { inputBuffer, inputFormat, outputFormat, title } = params;
-    const tempInputPath = path.join(this.tempDir, `extract_${Date.now()}.${inputFormat}`);
+    const { operationId, sourceS3File, outputFormat, title } = params;
+    const tempInputPath = path.join(this.tempDir, `extract_${Date.now()}.${path.extname(sourceS3File.key)}`);
     const tempOutputPath = path.join(this.tempDir, `extract_${Date.now()}_output.${outputFormat}`);
 
+    const storageService = createStorageService();
+    const notificationService = createNotificationService();
+
     try {
+      // Download from S3
+      console.log('Downloading from S3...');
+      const inputBuffer = await storageService.downloadFromS3(sourceS3File.bucket, sourceS3File.key);
+
       // Write input buffer to temporary file
       await fs.writeFile(tempInputPath, inputBuffer);
 
@@ -126,15 +159,30 @@ export class ConversionService {
       // Read the processed file
       const outputBuffer = await fs.readFile(tempOutputPath);
 
+      // Save to S3
+      const storageResult = await storageService.saveAudioToS3({
+        buffer: outputBuffer,
+        operationId,
+        title,
+        format: outputFormat as 'mp3' | 'm4a' | 'wav',
+        prefix: 'extracted'
+      });
+
+      // Send notification
+      await notificationService.sendNotification({
+        operationId,
+        type: 'AUDIO_EXTRACTION_COMPLETE',
+        s3File: {
+          ...storageResult.s3File,
+          sourceS3File: sourceS3File
+        }
+      });
+
       // Clean up temporary files
       await fs.unlink(tempInputPath);
       await fs.unlink(tempOutputPath);
 
-      return {
-        buffer: outputBuffer,
-        filename: title ? `${title}.${outputFormat}` : `extracted_${Date.now()}.${outputFormat}`,
-        mimetype: `audio/${outputFormat}`
-      };
+      return storageResult;
     } catch (error) {
       // Clean up temporary files in case of error
       try {

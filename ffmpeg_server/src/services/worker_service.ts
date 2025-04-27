@@ -1,31 +1,28 @@
 import { QueueManagerService } from './queue_manager_service';
 import { config } from '../config';
-import { processVideo } from '../utils/ffmpeg';
-import { createQueueManagerService } from '../factory';
-import { FacebookService } from './facebook_service';
+import { processVideo } from '../utils';
+import { createQueueManagerService, createFacebookService, createYoutubeService } from '../factory';
 
 export class WorkerService {
   private queueManager: QueueManagerService;
   private isRunning: boolean = false;
-  private facebookService: FacebookService;
+  private facebookService: ReturnType<typeof createFacebookService>;
+  private youtubeService: ReturnType<typeof createYoutubeService>;
 
   constructor(queueUrl: string) {
     this.queueManager = createQueueManagerService(queueUrl);
-    this.facebookService = new FacebookService();
+    this.facebookService = createFacebookService();
+    this.youtubeService = createYoutubeService();
   }
 
-  async start(): Promise<void> {
-    this.isRunning = true;
-    console.log('Starting FFmpeg worker...');
-    // Initialize the queue
-    try {
-      console.log('Initializing queue...');
-      await this.queueManager.initialize();
-      console.log('Queue initialized successfully');
-    } catch (error) {
-      console.error('Error initializing queue:', error);
-      throw error;
+  async start() {
+    if (this.isRunning) {
+      console.log('Worker is already running');
+      return;
     }
+
+    this.isRunning = true;
+    console.log('Worker service started');
 
     while (this.isRunning) {
       try {
@@ -33,14 +30,11 @@ export class WorkerService {
         
         for (const message of messages) {
           try {
-            const job = JSON.parse(message.Body || '{}');
-            await this.processJob(job);
-            await this.queueManager.deleteMessage(message.ReceiptHandle || '');
+            await this.processJob(JSON.parse(message.Body));
+            await this.queueManager.deleteMessage(message.ReceiptHandle);
           } catch (error) {
             console.error('Error processing job:', error);
-            // Don't delete the message - let it go to DLQ after max retries
-            // The message will be automatically moved to DLQ after max retries
-            // This allows for manual inspection and handling of failed messages
+            // Don't delete the message so it can be retried
           }
         }
       } catch (error) {
@@ -51,9 +45,9 @@ export class WorkerService {
     }
   }
 
-  async shutdown(): Promise<void> {
+  async shutdown() {
     this.isRunning = false;
-    console.log('Shutting down FFmpeg worker...');
+    console.log('Shutting down worker service...');
   }
 
   private async processJob(job: any): Promise<void> {
@@ -63,16 +57,20 @@ export class WorkerService {
 
     switch (type) {
       case 'FACEBOOK_DOWNLOAD':
-        const result = await this.facebookService.downloadVideo({
+        await this.facebookService.downloadVideo({
           url: params.url,
-          title: params.title
+          title: params.title,
+          operationId: params.operationId
         });
-        console.log('Facebook download completed:', {
-          filename: result.filename,
-          size: result.buffer.length,
-          mimetype: result.mimetype
+        break;
+
+      case 'YOUTUBE_DOWNLOAD':
+        await this.youtubeService.downloadVideo({
+          url: params.url,
+          quality: params.quality,
+          title: params.title,
+          operationId: params.operationId
         });
-        // TODO: Handle the downloaded video buffer (e.g., save to S3, send to another service, etc.)
         break;
 
       case 'VIDEO_PROCESSING':

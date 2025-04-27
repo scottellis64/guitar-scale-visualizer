@@ -1,6 +1,7 @@
 import { SQSClient } from "@aws-sdk/client-sqs";
 import { ServiceDiscoveryClient } from "@aws-sdk/client-servicediscovery";
 import { config } from '../config';
+import { S3Client } from "@aws-sdk/client-s3";
 
 // Base AWS configuration
 const getBaseAwsConfig = () => ({
@@ -14,6 +15,15 @@ const getBaseAwsConfig = () => ({
     maxAttempts: 3,
   }),
 });
+
+export const createS3Client = (): S3Client => {
+  return new S3Client({
+    region: config.aws.region,
+    endpoint: config.aws.endpoint,
+    credentials: config.aws.credentials,
+    forcePathStyle: true
+  });
+};
 
 // SQS Client Factory
 export const createSQSClient = (endpoint?: string) => {

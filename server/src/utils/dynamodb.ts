@@ -1,4 +1,3 @@
-
 import { createDynamoDBClient, createDynamoDBDocumentClient, createS3Client } from '../factory';
 import { config } from '../config';
 import { TABLES, BUCKETS } from './constants';
@@ -6,6 +5,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { PutCommand, GetCommand, QueryCommand, DeleteCommand, ScanCommand } from "@aws-sdk/lib-dynamodb";
 import { PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from "@aws-sdk/client-s3";
 import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+
+// Re-export TABLES
+export { TABLES };
 
 // Initialize AWS clients
 const dynamoDBClient = createDynamoDBClient();

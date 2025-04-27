@@ -17,7 +17,9 @@ import {
 } from './media_storage';
 
 import {
-  ddbDocClient
+  ddbDocClient,
+  createUser,
+  getUser
 } from './dynamodb';
 
 import {
@@ -48,6 +50,8 @@ export {
 
   // DynamoDB
   ddbDocClient,
+  createUser,
+  getUser,
 
   // Consul
   registerService,

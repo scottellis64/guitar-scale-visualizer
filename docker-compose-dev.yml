@@ -61,7 +61,8 @@ services:
       - ./.env.development   
     ports:
       - "${SERVER_PORT}:${SERVER_PORT}"
-      - "${SERVER_DEBUG_PORT}:9229"  
+      - "${SERVER_DEBUG_PORT}:${SERVER_DEBUG_PORT}"  
+    command: yarn dev
     environment:
       - DYNAMODB_ENDPOINT=${AWS_ENDPOINT}
       - S3_ENDPOINT=${AWS_ENDPOINT}

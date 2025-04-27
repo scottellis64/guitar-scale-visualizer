@@ -1,55 +1,47 @@
 import express from 'express';
 import cors from 'cors';
-import swaggerUi from 'swagger-ui-express';
-import swaggerJsdoc from 'swagger-jsdoc';
-import { config, getFfmpegQueueUrl } from './config';
+import { swaggerMiddleware, swaggerUiHandler } from './swagger';
+import { config } from './config';
 import routes from './routes';
-import { createWorkerService } from './factory';
-import { registerService } from './serviceDiscovery';
+import { createWorkerService, createServiceDiscoveryService } from './factory';
 
 const app = express();
-
-// Swagger configuration
-const swaggerOptions = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'FFmpeg Server API',
-      version: '1.0.0',
-      description: 'API documentation for FFmpeg Server',
-    },
-    servers: [
-      {
-        url: getFfmpegQueueUrl(),
-        description: 'Development server',
-      },
-    ],
-  },
-  apis: ['./src/routes/*.ts'], // Path to the API routes
-};
-
-const swaggerSpec = swaggerJsdoc(swaggerOptions);
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Register API routes
+console.log(config.server.swaggerPath);
+
+// API documentation
+app.use(config.server.swaggerPath, swaggerMiddleware, swaggerUiHandler);
+
+// Routes
 app.use('/api', routes);
-
-// Swagger UI
-app.use('/api-docs', (swaggerUi as any).serve);
-app.get('/api-docs', (swaggerUi as any).setup(swaggerSpec));
 
 // Initialize worker service
 const worker = createWorkerService();
+const serviceDiscovery = createServiceDiscoveryService();
 
 // Start server and worker
 app.listen(config.server.port, config.server.host, async () => {
   console.log(`FFmpeg server is running on port ${config.server.port}`);
   console.log(`API documentation available at http://${config.server.host}:${config.server.port}/api-docs`);
   
-  await registerService('ffmpeg');
+  await serviceDiscovery.registerService({
+    name: 'ffmpeg',
+    port: config.server.port,
+    address: config.server.host,
+    tags: ['ffmpeg', 'video-processing'],
+    check: {
+      http: `http://${config.server.host}:${config.server.port}/api/health`,
+      interval: '10s',
+      timeout: '5s',
+    },
+  });
+
+  console.log('Starting worker service...');
   await worker.start();
 });
 

@@ -2,6 +2,9 @@ import { WorkerService } from '../services/worker_service';
 import { ConversionService } from '../services/conversion_service';
 import { YoutubeService } from '../services/youtube_service';
 import { FacebookService } from '../services/facebook_service';
+import { StorageService } from '../services/storage_service';
+import { NotificationService } from '../services/notification_service';
+import { ServiceDiscoveryService } from '../services/service_discovery_service';
 import { config } from '../config';
 
 export const createWorkerService = (): WorkerService => {
@@ -21,4 +24,16 @@ export const createYoutubeService = (): YoutubeService => {
 
 export const createFacebookService = (): FacebookService => {
   return new FacebookService();
+};
+
+export const createStorageService = (): StorageService => {
+  return new StorageService();
+};
+
+export const createNotificationService = (): NotificationService => {
+  return new NotificationService();
+};
+
+export const createServiceDiscoveryService = (): ServiceDiscoveryService => {
+  return new ServiceDiscoveryService();
 }; 

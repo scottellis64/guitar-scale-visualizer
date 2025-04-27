@@ -2,6 +2,7 @@ import { promises as fs } from 'fs';
 import { exec } from 'child_process';
 import { promisify } from 'util';
 import path from 'path';
+import { createStorageService, createNotificationService } from '../factory';
 
 const execAsync = promisify(exec);
 
@@ -10,6 +11,7 @@ export interface YoutubeDownloadParams {
   quality?: string;
   title?: string;
   userId?: string;
+  operationId: string;
 }
 
 // Quality presets for different video sizes
@@ -30,9 +32,12 @@ export class YoutubeService {
   }
 
   async downloadVideo(params: YoutubeDownloadParams) {
-    const { url, quality = 'best', title } = params;
+    const { url, quality = 'best', title, operationId } = params;
     const tempInputPath = path.join(this.tempDir, `yt_${Date.now()}.mp4`);
     const tempOutputPath = path.join(this.tempDir, `yt_${Date.now()}_output.mp4`);
+
+    const storageService = createStorageService();
+    const notificationService = createNotificationService();
 
     try {
       // Get the quality format string
@@ -53,15 +58,26 @@ export class YoutubeService {
       // Read the processed file
       const outputBuffer = await fs.readFile(tempOutputPath);
 
+      // Save to S3 and get file information
+      const storageResult = await storageService.saveVideoToS3({
+        buffer: outputBuffer,
+        operationId,
+        title,
+        prefix: 'youtube'
+      });
+
+      // Send notification
+      await notificationService.sendNotification({
+        operationId,
+        type: 'YOUTUBE_VIDEO_READY',
+        s3File: storageResult.s3File
+      });
+
       // Clean up temporary files
       await fs.unlink(tempInputPath);
       await fs.unlink(tempOutputPath);
 
-      return {
-        buffer: outputBuffer,
-        filename: title ? `${title}.mp4` : `youtube_${Date.now()}.mp4`,
-        mimetype: 'video/mp4'
-      };
+      return storageResult;
     } catch (error) {
       // Clean up temporary files in case of error
       try {

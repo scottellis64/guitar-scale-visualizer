@@ -12,8 +12,10 @@ const s3Client = createS3Client(config.aws.s3.endpoint);
 async function waitForLocalStack(maxAttempts = 30, interval = 2000) {
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
-      const response = await axios.get(`${config.aws.endpoint}/_localstack/health`);
-      if (response.data && response.data.services && response.data.services.dynamodb === 'running') {
+      const localstackUrl = `${config.aws.endpoint}/_localstack/health`;
+      const response = await axios.get(localstackUrl);
+      const dynamoDBStatus = response?.data?.services?.dynamodb;
+      if (dynamoDBStatus && (dynamoDBStatus === 'available' || dynamoDBStatus === 'running')) {
         console.log('LocalStack is ready!');
         return true;
       }
@@ -32,35 +34,26 @@ export async function initializeLocalStack() {
     await waitForLocalStack();
 
     // Create DynamoDB tables
-    for (const table of Object.values(TABLES)) {
-      const tableName = `${config.environment}-${table}`;
+    for (const tableName of Object.values(TABLES)) {
+      const fullTableName = `${config.environment}-${tableName}`;
       try {
         await dynamoDBClient.send(new CreateTableCommand({
-          TableName: tableName,
+          TableName: fullTableName,
           KeySchema: [
-            { AttributeName: 'id', KeyType: 'HASH' }, // Partition key
+            { AttributeName: 'id', KeyType: 'HASH' }
           ],
           AttributeDefinitions: [
-            { AttributeName: 'id', AttributeType: 'S' },
-            { AttributeName: 'userId', AttributeType: 'S' },
+            { AttributeName: 'id', AttributeType: 'S' }
           ],
-          GlobalSecondaryIndexes: [
-            {
-              IndexName: 'userId-index',
-              KeySchema: [
-                { AttributeName: 'userId', KeyType: 'HASH' },
-              ],
-              Projection: {
-                ProjectionType: 'ALL',
-              },
-            },
-          ],
-          BillingMode: 'PAY_PER_REQUEST',
+          ProvisionedThroughput: {
+            ReadCapacityUnits: 5,
+            WriteCapacityUnits: 5
+          }
         }));
-        console.log(`Created DynamoDB table: ${tableName}`);
+        console.log(`Created DynamoDB table: ${fullTableName}`);
       } catch (error: any) {
         if (error.name === 'ResourceInUseException') {
-          console.log(`Table ${tableName} already exists`);
+          console.log(`Table ${fullTableName} already exists`);
         } else {
           console.error('Error creating table:', error);
           throw error;

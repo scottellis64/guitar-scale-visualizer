@@ -21,7 +21,9 @@ RUN yarn config set network-timeout 300000 && \
 
 COPY . .
 
+# Expose ports for API and debugging
 EXPOSE 3000
+EXPOSE 9229
 
 CMD ["yarn", "dev"]
 

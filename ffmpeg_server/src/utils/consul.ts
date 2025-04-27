@@ -1,11 +1,9 @@
 import Consul from 'consul';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { config } from '../config';
 
 const consul = new Consul({
-    host: process.env.CONSUL_HOST || 'consul',
-    port: process.env.CONSUL_PORT || '8500'
+    host: config.consul.host,
+    port: config.consul.port.toString()
 });
 
 export interface ServiceConfig {
@@ -26,33 +24,33 @@ interface ConsulService {
     Port: number;
 }
 
-export async function registerService(config: ServiceConfig) {
-    const serviceId = `${config.name}-${process.env.HOSTNAME || 'local'}`;
+export async function registerService(serviceConfig: ServiceConfig) {
+    const serviceId = `${serviceConfig.name}-${config.server.host}`;
     
     try {
         // Use the service name as the address in Docker network
-        const serviceAddress = config.address || config.name;
+        const serviceAddress = serviceConfig.address || serviceConfig.name;
         
         await consul.agent.service.register({
             id: serviceId,
-            name: config.name,
+            name: serviceConfig.name,
             address: serviceAddress,
-            port: config.port,
-            tags: config.tags || [],
-            check: config.check || {
-                http: `http://${serviceAddress}:${config.port}/health`,
+            port: serviceConfig.port,
+            tags: serviceConfig.tags || [],
+            check: serviceConfig.check || {
+                http: `http://${serviceAddress}:${serviceConfig.port}/health`,
                 interval: '10s',
                 timeout: '5s',
             },
         });
         
-        console.log(`Service ${config.name} registered with Consul at ${serviceAddress}:${config.port}`);
+        console.log(`Service ${serviceConfig.name} registered with Consul at ${serviceAddress}:${serviceConfig.port}`);
         
         // Handle graceful shutdown
         process.on('SIGINT', async () => {
             try {
                 await consul.agent.service.deregister(serviceId);
-                console.log(`Service ${config.name} deregistered from Consul`);
+                console.log(`Service ${serviceConfig.name} deregistered from Consul`);
                 process.exit(0);
             } catch (error) {
                 console.error('Error during service deregistration:', error);
