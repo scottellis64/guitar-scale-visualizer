@@ -1,0 +1,6 @@
+{
+  "watch": ["src", "../shared/src"],
+  "ext": ".ts,.js",
+  "ignore": [],
+  "exec": "tsc --build && node --inspect=0.0.0.0:9230 --enable-source-maps -r ts-node/register src/index.ts"
+} 

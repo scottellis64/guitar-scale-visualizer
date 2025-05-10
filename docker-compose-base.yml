@@ -1,0 +1,17 @@
+# Use this if you need to inspect the base image
+version: '3.8'
+
+services:
+  base:
+    image: fretstop-base:latest
+    # Using sleep infinity to keep the container running
+    command: sleep infinity
+    # Add any ports you might want to expose for inspection
+    ports:
+      - "8080:8080"  # Adjust port as needed
+    networks:
+      - app-network
+
+networks:
+  app-network:
+    driver: bridge 

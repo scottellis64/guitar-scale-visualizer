@@ -1,73 +1,39 @@
-# Development stage
-FROM node:21-alpine AS development
-
-# Set environment variables
-ARG NODE_ENV=development
-ENV NODE_ENV=${NODE_ENV}
-
-# Install system dependencies
-RUN apk add --no-cache \
-    ca-certificates \
-    curl
+FROM fretstop-base:latest as base
 
 WORKDIR /app
 
-# Copy shared package first
-COPY shared /shared
+# Install dependencies required for node-gyp
+RUN apk add --no-cache python3 make g++
 
-# Copy client package files
+# Copy only client package.json and yarn.lock
 COPY client/package.json client/yarn.lock ./
 
-# Install dependencies with verbose output
-RUN yarn config set network-timeout 300000 && \
-    yarn install --verbose
+# Install dependencies
+RUN yarn install:client
 
-# Copy client source code
-COPY client/ ./
+# Copy the client files
+COPY client/ .
 
+FROM base as development
+WORKDIR /app
+# Set NODE_ENV to development by default
+ENV NODE_ENV=development
+# Expose Vite dev server port
 EXPOSE 5173
-
 CMD ["yarn", "dev", "--host", "0.0.0.0"]
 
-# Production stage
-FROM node:21-alpine AS builder
-
-# Set environment variables
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
-
-# Install system dependencies
-RUN apk add --no-cache \
-    ca-certificates \
-    curl
-
+FROM base as builder
 WORKDIR /app
-
-# Copy shared package first
-COPY shared /shared
-
-# Copy client package files
-COPY client/package.json client/yarn.lock ./
-
-# Install dependencies with verbose output
-RUN yarn config set network-timeout 300000 && \
-    yarn install --frozen-lockfile --verbose
-
-# Copy client source code
-COPY client/ ./
-
+# Set NODE_ENV to production
+ENV NODE_ENV=production
 # Build the application
-RUN yarn build
+RUN yarn build:client
 
-# Final production stage
-FROM nginx:alpine AS production
-
+FROM nginx:alpine as production
 # Copy built files from builder stage
 COPY --from=builder /app/dist /usr/share/nginx/html
-
 # Copy nginx configuration
 COPY client/nginx.conf /etc/nginx/conf.d/default.conf
-
+# Expose nginx port
 EXPOSE 80
-
 CMD ["nginx", "-g", "daemon off;"] 

@@ -1,0 +1,26 @@
+FROM node:18-alpine
+
+WORKDIR /app
+
+# Install dependencies required for node-gyp
+RUN apk add --no-cache python3 make g++
+
+# Copy root package.json
+COPY package.json ./
+
+# Copy server directory with only shared workspace
+COPY server/package.json server/yarn.lock ./server/
+COPY server/shared ./server/shared/
+
+# Modify server's package.json to only include shared workspace
+RUN cd server && \
+    node -e "const pkg = require('./package.json'); \
+    pkg.workspaces = ['shared']; \
+    require('fs').writeFileSync('./package.json', JSON.stringify(pkg, null, 2));"
+
+# Install dependencies and build shared package
+RUN yarn install:server && \
+    yarn build:server
+
+# Clean up any unnecessary files
+RUN rm -rf node_modules/.cache 

@@ -1,19 +1,27 @@
 version: '3.8'
 
 services:
+  # Base image is built but not run as a service
+  # Other services will use it as their base image
+
   # Service Discovery (Consul for local development)
   consul:
     image: consul:1.15
     container_name: consul
+    env_file:
+      - ./.env.development      
+    environment:
+      - CONSUL_HOST=${CONSUL_HOST}
+      - CONSUL_PORT=${CONSUL_PORT}
     ports:
       - "${CONSUL_PORT}:${CONSUL_PORT}"
-    command: agent -dev -client=0.0.0.0
+    command: agent -dev -client=0.0.0.0 -bind=0.0.0.0
     networks:
       - app-network
 
-  dynamodb-local:
+  dynamodb:
     image: amazon/dynamodb-local
-    container_name: dynamodb-local
+    container_name: dynamodb
     ports:
       - "${DYNAMODB_PORT}:${DYNAMODB_PORT}"
     command: "-jar DynamoDBLocal.jar -sharedDb -dbPath ./data"
@@ -36,13 +44,12 @@ services:
       - SERVICES=${LOCALSTACK_SERVICES}
       - DATA_DIR=${LOCALSTACK_REMOTE_DATA_DIR}
       - PERSISTENCE=1
-      - INIT_SCRIPTS_PATH=/docker-entrypoint-initaws.d
       - EDGE_PORT=${LOCALSTACK_PORT}
       - TMPDIR=/var/lib/localstack/tmp
+      - LS_LOG=${LOCALSTACK_LOG_LEVEL}
     volumes:
       - "${LOCALSTACK_VOLUME_DIR}:${LOCALSTACK_REMOTE_DATA_DIR}"
       - "/var/run/docker.sock:/var/run/docker.sock"
-      - "./init-aws.sh:/docker-entrypoint-initaws.d/init-aws.sh"
     healthcheck:
       test: ["CMD", "curl", "-f", "${AWS_ENDPOINT}/_localstack/health"]
       interval: 10s
@@ -52,37 +59,43 @@ services:
     networks:
       - app-network
 
-  server:
+  api:
     build:
-      context: ./server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./server/api/Dockerfile
       target: development
+    container_name: api
+    volumes:
+      - .:/app
+      - /app/client
+      - /app/server/ffmpeg
+      - /app/server/api/node_modules
+      - /app/node_modules
+      - ./.env.development:/app/.env:ro
+      - /var/run/docker.sock:/var/run/docker.sock      
     env_file:
       - ./.env.development   
     ports:
-      - "${SERVER_PORT}:${SERVER_PORT}"
-      - "${SERVER_DEBUG_PORT}:${SERVER_DEBUG_PORT}"  
-    command: yarn dev
-    environment:
-      - DYNAMODB_ENDPOINT=${AWS_ENDPOINT}
-      - S3_ENDPOINT=${AWS_ENDPOINT}
-      - SQS_ENDPOINT=${AWS_ENDPOINT}
-    volumes:
-      - ./server:/app
-      - /app/node_modules
-      - ./.env.development:/app/.env
+      - "${API_PORT}:${API_PORT}"
+      - "${API_DEBUG_PORT}:${API_DEBUG_PORT}"  
+    command: yarn workspace @fretstop/api dev  
     depends_on:
-      localstack:
-        condition: service_healthy
+      consul:
+        condition: service_started
     networks:
       - app-network
 
-  ffmpeg_server:
+  ffmpeg:
     build:
-      context: ./ffmpeg_server
+      context: .
+      dockerfile: ./server/ffmpeg/Dockerfile
       target: development
+    container_name: ffmpeg
     volumes:
-      - ./ffmpeg_server:/app
+      - .:/app
+      - /app/client
+      - /app/server/api
+      - /app/server/ffmpeg/node_modules
       - /app/node_modules
       - ./.env.development:/app/.env:ro
       - /var/run/docker.sock:/var/run/docker.sock
@@ -90,11 +103,9 @@ services:
       - ./.env.development
     ports:
       - "${FFMPEG_PORT}:${FFMPEG_PORT}"
-      - "${FFMPEG_DEBUG_PORT}:9230"
-    command: yarn dev
+      - "${FFMPEG_DEBUG_PORT}:${FFMPEG_DEBUG_PORT}"
+    command: yarn workspace @fretstop/ffmpeg dev
     depends_on:
-      localstack:
-        condition: service_healthy
       consul:
         condition: service_started
     networks:
@@ -105,11 +116,17 @@ services:
       context: .
       dockerfile: ./client/Dockerfile
       target: development
+    env_file:
+      - ./.env.development
     ports:
       - "${CLIENT_PORT}:${CLIENT_PORT}"
     volumes:
-      - ./client:/app
+      - .:/app
       - /app/node_modules
+    command: yarn workspace @fretstop/client dev
+    depends_on:
+      consul:
+        condition: service_started
     networks:
       - app-network
 

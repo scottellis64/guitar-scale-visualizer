@@ -1,47 +1,40 @@
-# Guitar App
+# Fret Stop
 
-A guitar application with a React client and Express server.
+Aims to be an all-in-one guitar learning and resource center.
 
 ## Research these resources
 
 - [ytdlp-nodejs](https://github.com/iqbal-rashed/ytdlp-nodejs)
 - tutorial for building a full stack streaming app on [Medium](https://medium.com/@phuongnamle0411/create-a-full-stack-streaming-app-using-react-node-js-and-mongodb-a-step-by-step-guide-9024dedb6f53)
 
-## Project Structure
 
-```
-.
-├── client/           # React frontend application
-│   ├── src/         # Client source code
-│   ├── public/      # Static assets
-│   └── package.json # Client dependencies
-├── server/          # Express backend application
-│   ├── src/         # Server source code
-│   └── package.json # Server dependencies
-└── package.json     # Root package.json for managing both client and server
-```
+## Server Module Setup
 
-## Setup
+Each server module needs to have the following features in order to participate in the fret-stop ecosystem:
+- Provides a Dockerfile that builds itself in production and development mode
+   * In development mode, the source code of the project is copied to the docker container and built with yarn just as it is done locally
+   * The server module's api endpoint port is exposed (common to both production and development)
+   * A debug port is also exposed so that on the local system VSCode is able to connect remotely to running application, set breakpoints, etc
+      * The module has a nodemon.json that is responsible for starting the application in debug mode
+      * package.json has a dev script: "dev": "nodemon --config nodemon.json"
+      * At the root of the project there is .env.development, that contains all of the development values to inject into the environment of both the build and the runtime environment.  There is .env for production, but the focus now is on development.
+      * There are several challenges in making these environment variables available in all of the required contexts
+         * When starting a development build, there is a script in /scripts called docker-compose-dev.sh, which has this content: docker-compose --env-file .env.development -f docker-compose.yml -f docker-compose-dev.yml "$@" 
+         * The reason for --env-file .env.development
+            * You will notice that some of the service definitions in docker-compose-*.yml have a env_file block that repeats this same information.  
+               * passing into the build from the command line makes anything in the .env.development available to the docker build itself
+               * todo
 
-1. Install dependencies:
-   ```bash
-   yarn install-all
-   ```
+## Topology
 
-2. Install LocalStack:
-   - Install the LocalStack extension for Docker Desktop
-   - This provides a web interface at app.localstack.cloud for monitoring AWS services
+I'd like for this architecture to be a composite of backend services and web subcomponents all
+mixed together.
 
-3. Start development servers:
-   ```bash
-   yarn dev
-   ```
-   This will start both the client (Vite) and server (Express) in development mode.
+Look into this [stackexchange](https://stackoverflow.com/questions/47416277/serving-multiple-react-apps-with-client-side-routing-in-express) post that talks about using 
+"Express Vhost Package".  
 
-4. Build for production:
-   ```bash
-   yarn build
-   ```
+
+
 
 ## Development
 
@@ -197,3 +190,11 @@ How best to do this?  That's the question.  So here are some links to start rese
 - [Another](https://medium.com/@randika/serverless-microservices-with-node-js-and-aws-lambda-build-deploy-34a8c3d80e41xx) AWS Lambda/DynamoDB how to
 - No AWS, but all about Node [microservices](https://dev.to/abeinevincent/how-to-build-deploy-scalable-microservices-with-nodejs-typescript-and-docker-a-comprehesive-guide-2bcc)
       
+
+*VS Code Editor Keyboard Shortcuts*  
+
+| Shortcut  | Description                                        |
+|-----------|----------------------------------------------------|
+| cmd-enter | Start a new line without breaking the current line |
+ 
+
