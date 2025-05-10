@@ -1,6 +1,6 @@
 {
-  "name": "guitar-scales",
-  "version": "0.1.0",
+  "name": "@fretstop/client",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "dependencies": {
@@ -81,6 +81,7 @@
     "ts-jest": "^29.1.2",
     "typescript": "^5.0.2",
     "vite": "^5.0.0",
-    "vitest": "^1.0.0"
+    "vitest": "^1.0.0",
+    "eslint-plugin-import": "^2.29.1"
   }
 }

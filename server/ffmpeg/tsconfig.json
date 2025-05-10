@@ -1,0 +1,25 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "inlineSources": true,
+    "sourceRoot": "/app/server/ffmpeg/src",
+    "paths": {
+      "@fretstop/shared": ["../shared/src"],
+      "*": ["./node_modules/*", "./src/*"]
+    }
+  },
+  "include": ["./src/**/*", "./src/**/*.d.ts"],
+  "exclude": ["./node_modules", "./dist", "./src/**/*.test.ts"],
+  "references": [
+    { "path": "../shared" }
+  ]
+} 

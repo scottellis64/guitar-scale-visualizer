@@ -5,7 +5,7 @@ services:
   # Main Server Service
   server:
     build:
-      context: ./server
+      context: ./server/api
       dockerfile: Dockerfile
       target: production
     container_name: server
@@ -18,12 +18,12 @@ services:
       - app-network
 
   # FFmpeg Server Service
-  ffmpeg_server:
+  ffmpeg:
     build:
-      context: ./ffmpeg_server
+      context: ./server/ffmpeg
       dockerfile: Dockerfile
       target: development
-    container_name: ffmpeg_server
+    container_name: ffmpeg
     command: yarn dev
     ports:
       - "3001:3001"
@@ -32,7 +32,7 @@ services:
       - .env
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - ./ffmpeg_server:/app
+      - ./server/ffmpeg:/app
       - /app/node_modules
     user: root
     networks:
@@ -41,7 +41,7 @@ services:
   # Client Service
   client:
     build:
-      context: .
+      context: ./client
       dockerfile: ./client/Dockerfile
       target: production
     container_name: client
@@ -53,9 +53,20 @@ services:
     dns_search: .
     depends_on:
       - server
-      - ffmpeg_server
+      - ffmpeg
     networks:
       - app-network
+
+  base:
+    image: fretstop-base:latest
+    # Using sleep infinity to keep the container running
+    command: sleep infinity
+    # Add any ports you might want to expose for inspection
+    ports:
+      - "8080:8080"  # Adjust port as needed
+    # Add any volumes if needed for inspection
+    volumes:
+      - ./:/app  # Mount current directory to /app in container
 
 networks:
   app-network:
